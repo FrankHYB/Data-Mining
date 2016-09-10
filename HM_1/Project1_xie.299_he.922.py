@@ -388,6 +388,22 @@ def ignoreMissingValue(data,index):
 
 
 if __name__ == '__main__':
+
+    #Iris data
+    rawIris = readFile(IrisFile)
+    data = preProcess_Iris(rawIris)
+    write_preprocessed_data(data,IrisPreprocessed,['sepal_length', 'sepal_width', 'petal_length', 'petal_width'])
+    irises = []
+    dist_matrix = []
+    for i in range(len(data['sepal_length'])):
+        irises.append(IrisNode(data, i))
+
+    #Euclidean distance
+    write_to_file_eulid(header_iris, irises, iris_output_elud)
+    #Cosine similarity
+    write_to_file_cos(header_iris, irises, iris_output_cos)
+
+
     #Income data
     rawIncome = readFile(incomeFile)
 
@@ -405,18 +421,3 @@ if __name__ == '__main__':
     write_to_file_eulid(header_income,income,income_output_elud)
     #Cosine similarity
     write_to_file_cos(header_income,income,income_output_cos)
-
-    #Iris data
-    rawIris = readFile(IrisFile)
-    data = preProcess_Iris(rawIris)
-    write_preprocessed_data(data,IrisPreprocessed,['sepal_length', 'sepal_width', 'petal_length', 'petal_width'])
-    irises = []
-    dist_matrix = []
-    for i in range(len(data['sepal_length'])):
-        irises.append(IrisNode(data, i))
-
-    #Euclidean distance
-    write_to_file_eulid(header_iris, irises, iris_output_elud)
-    #Cosine similarity
-    write_to_file_cos(header_iris, irises, iris_output_cos)
-
