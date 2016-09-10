@@ -11,15 +11,6 @@ iris_output_elud = 'Iris_output_elud.csv'
 iris_output_cos = 'Iris_output_cos.csv'
 incomeFile = 'module2BusinessContext_v1.1.csv'
 header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
-# Normalize the columns in order to minimize the difference
-max_sepal_length = 0.0
-min_sepal_length = 0.0
-max_sepal_width = 0.0
-min_sepal_width = 0.0
-max_petal_length = 0.0
-min_petal_length = 0.0
-max_petal_width = 0.0
-min_petal_width = 0.0
 
 
 
@@ -71,38 +62,27 @@ def readFile(filename):
 
 def preProcess_Iris(data):
     #columns
-    sepal_length = [float(ele) for ele in data['sepal_length']]
-    sepal_width = [float(ele) for ele in data['sepal_width']]
-    petal_length = [float(ele) for ele in data['petal_length']]
-    petal_width = [float(ele) for ele in data['petal_width']]
+    sepal_length = data['sepal_length']
+    sepal_width =  data['sepal_width']
+    petal_length = data['petal_length']
+    petal_width = data['petal_width']
 
-    sepal_length.sort()
-    max_sepal_length = sepal_length[len(sepal_length) - 1]
-    min_sepal_length = sepal_length[0]
-
-    sepal_width.sort()
-    max_sepal_width = sepal_width[len(sepal_width) - 1]
-    min_sepal_width = sepal_width[0]
-
-    petal_length.sort()
-    max_petal_length = petal_length[len(petal_length) - 1]
-    min_petal_length = petal_length[0]
-
-    petal_width.sort()
-    max_petal_width = petal_width[len(petal_width) - 1]
-    min_petal_width = petal_width[0]
-
-    data['sepal_length'] = min_max_normalization([float(ele) for ele in data['sepal_length']], min_sepal_length, max_sepal_length)
-    data['sepal_width'] = min_max_normalization([float(ele) for ele in data['sepal_width']], min_sepal_width, max_sepal_width)
-    data['petal_length'] = min_max_normalization([float(ele) for ele in data['petal_length']], min_petal_length, max_petal_length)
-    data['petal_width'] = min_max_normalization([float(ele) for ele in data['petal_width']], min_petal_width, max_petal_width)
+    data['sepal_length'] = min_max_normalize(sepal_length)
+    data['sepal_width'] = min_max_normalize(sepal_width)
+    data['petal_length'] = min_max_normalize(petal_length)
+    data['petal_width'] = min_max_normalize(petal_width)
 
     return data
 
-def min_max_normalization(column, min, max):
-    for i in range(len(column)):
-        column[i] = (column[i] - min) / (max - min)
-    return column
+def min_max_normalize(data):
+    data = map(float,data)
+    minV = min(data)
+    maxV = max(data)
+
+    for i in range(len(data)):
+        data[i] = ((data[i] - minV)/(maxV - minV))
+
+    return data
 
 
 
@@ -131,7 +111,10 @@ def write_preprocessed_data(data, filename, header):
         length = len(data[header[0]])
         for i in range(length):
             for j in range(len(header)):
-                f.write(str(data[header[j]][i]))
+                if j!=0:
+                    f.write(',' + str(data[header[j]][i]))
+                else:
+                    f.write(str(data[header[j]][i]))
             f.write('\n')
 
 
