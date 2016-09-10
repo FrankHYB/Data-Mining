@@ -1,27 +1,80 @@
 import csv
 import math
 import operator
-import numpy as np
+import numpy
 import matplotlib.pyplot as plt
 
+#Set k = 4.
 K = 4
+
+#Define filenames for Iris output
 IrisFile = 'Iris.csv'
 IrisPreprocessed = 'Iris_Pre.csv'
 iris_output_elud = 'Iris_output_elud.csv'
 iris_output_cos = 'Iris_output_cos.csv'
-incomeFile = 'module2BusinessContext_v1.1.csv'
 header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
 
+#Define filenames for Income output
+incomeFile = 'module2BusinessContext_v1.1.csv'
+incomePreprocessed = 'Income_Pre.csv'
+income_output_elud = 'Income_output_elud.csv'
+income_output_cos = 'Income_output_cos.csv'
+header_income = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
+
+
+class IncomeNode:
+
+    #Initialize
+    def __init__(self, data, i):
+        self.ID = data['ID'][i]
+        self.age = data['age'][i]
+        self.workclass = data['workclass'][i]
+        self.fnlwgt = data['fnlwgt'][i]
+        self.edu = data['education'][i]
+        self.edu_cat = data['education_cat'][i]
+        self.marital = data['marital_status'][i]
+        self.occupation = data['occupation'][i]
+        self.relationship = data['relationship'][i]
+        self.race = data['race'][i]
+        self.gender = data['gender'][i]
+        self.capital_gain = data['capital_gain'][i]
+        self.capital_loss = data['capital_loss'][i]
+        self.hourPweek = data['hour_per_week'][i]
+        self.country = data['native_country'][i]
+
+
+    #Euclidean distance
+    def eulid(self,other):
+        x = [self.age,self.workclass,self.fnlwgt,self.edu_cat,self.marital,self.occupation,self.relationship,self.race,
+             self.gender,self.capital_gain,self.capital_loss,self.hourPweek,self.country]
+        y = [other.age,other.workclass,other.fnlwgt,other.edu_cat,other.marital,other.occupation,other.relationship,other.race,
+             other.gender,other.capital_gain,other.capital_loss,other.hourPweek,other.country]
+        dist = numpy.linalg.norm(numpy.subtract(x,y))
+        return round(dist,5)
+
+    #Cosine similarity
+    def cos_similarity(self, other):
+        x = [self.age, self.workclass, self.fnlwgt, self.edu_cat, self.marital, self.occupation, self.relationship,self.race,
+             self.gender, self.capital_gain, self.capital_loss, self.hourPweek, self.country]
+
+        y = [other.age, other.workclass, other.fnlwgt, other.edu_cat, other.marital, other.occupation, other.relationship, other.race,
+         other.gender, other.capital_gain, other.capital_loss, other.hourPweek, other.country]
+        numerator = numpy.dot(x, y)
+        denominator = numpy.linalg.norm(x) * numpy.linalg.norm(y)
+        return round(numerator / float(denominator), 5)
 
 
 class IrisNode:
 
+    #Initialize
     def __init__(self, data, i):
         self.sepal_length = float(data['sepal_length'][i])
         self.sepal_width = float(data['sepal_width'][i])
         self.petal_length = float(data['petal_length'][i])
         self.petal_width = float(data['petal_width'][i])
 
+
+    #Euclidean distance
     def eulid(self, other):
         sum = 0
         sum = (self.sepal_length - other.sepal_length) * (self.sepal_length - other.sepal_length)
@@ -30,6 +83,8 @@ class IrisNode:
         sum += (self.petal_width - other.petal_width) * (self.petal_width - other.petal_width)
         return math.sqrt(sum)
 
+
+    #Cosine similarity
     def cos_similarity(self, other):
         multi = self.sepal_length * other.sepal_length + self.sepal_width * other.sepal_width \
                  + self.petal_length * other.petal_length + self.petal_width * other.petal_width
@@ -40,12 +95,15 @@ class IrisNode:
         return multi / (math.sqrt(sq1) * math.sqrt(sq2))
 
 
+
 class OutputRow:
     def __init__(self, index, value):
         self.index = index
         self.value = value
 
 
+
+#Read data files
 def readFile(filename):
     with open(filename, 'rb') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -59,7 +117,8 @@ def readFile(filename):
 
     return data
 
-
+#Preprocess Iris dataset.
+#Normalization
 def preProcess_Iris(data):
     #columns
     sepal_length = data['sepal_length']
@@ -74,6 +133,162 @@ def preProcess_Iris(data):
 
     return data
 
+
+#Preprocess income dataset.
+#Translate strings to numbers; handle missing values; normalization
+def preProcess_income(data):
+    missingV = []
+
+    ID = data['ID']
+    age = data['age']
+
+    #preprocessing workclass
+    #Assign an unique number to each workclass
+    workclass = data['workclass']
+    cnt = 0
+    wcDic = {}
+    for i in range(len(workclass)):
+        if '?' in workclass[i]:
+            missingV.append(i)
+
+        if(wcDic.has_key(workclass[i])):
+            workclass[i] = wcDic.get(workclass[i])
+        else:
+            wcDic.update({workclass[i]:cnt})
+            workclass[i] = cnt
+            cnt = cnt+1
+
+    fnlwgt = data['fnlwgt']
+
+    #preprocessing education
+    #Assign an unique number to each education
+    edu = data['education']
+    cnt = 0
+    edDic = {}
+    for i in range(len(edu)):
+        if(edDic.has_key(edu[i])):
+            edu[i] = edDic.get(edu[i])
+        else:
+            edDic.update({edu[i]:cnt})
+            edu[i] = cnt
+            cnt = cnt + 1
+
+
+    edu_cat = data['education_cat']
+
+    #preprocessing marital_Status
+    #Assign an unique number to each marital_status
+    marital = data['marital_status']
+    cnt = 0
+    marDic = {}
+    for i in range(len(marital)):
+        if (marDic.has_key(marital[i])):
+            marital[i] = marDic.get(marital[i])
+        else:
+            marDic.update({marital[i]: cnt})
+            marital[i] = cnt
+            cnt = cnt + 1
+
+    # preprocessing occupation
+    #Assign an unique number to each occupation
+    occupation = data['occupation']
+    cnt = 0
+    ocpDic = {}
+    for i in range(len(occupation)):
+        if '?' in occupation[i]:
+            missingV.append(i)
+        if(ocpDic.has_key(occupation[i])):
+            occupation[i] = ocpDic.get(occupation[i])
+        else:
+            ocpDic.update({occupation[i]:cnt})
+            occupation[i] = cnt
+            cnt = cnt + 1
+
+    # preprocessing relationship
+    #Assign an unique number to each relationship
+    relationship = data['relationship']
+    cnt = 0
+    reDic = {}
+    for i in range(len(relationship)):
+        if (reDic.has_key(relationship[i])):
+            relationship[i] = reDic.get(relationship[i])
+        else:
+            reDic.update({relationship[i]: cnt})
+            relationship[i] = cnt
+            cnt = cnt + 1
+
+    # preprocessing race
+    #Assign an unique number to each race
+    race = data['race']
+    cnt = 0
+    raceDic = {}
+    for i in range(len(race)):
+        if (raceDic.has_key(race[i])):
+            race[i] = raceDic.get(race[i])
+        else:
+            raceDic.update({race[i]: cnt})
+            race[i] = cnt
+            cnt = cnt + 1
+
+    # preprocessing gender
+    #Assign an unique number to each gender
+    gender = data['gender']
+    cnt = 0
+    genDic = {}
+    for i in range(len(gender)):
+        if (genDic.has_key(gender[i])):
+            gender[i] = genDic.get(gender[i])
+        else:
+            genDic.update({gender[i]: cnt})
+            gender[i] = cnt
+            cnt = cnt + 1
+
+
+    capital_gain = data['capital_gain']
+    capital_loss = data['capital_loss']
+    hourPweek = data['hour_per_week']
+
+    #preprocessing native_country
+    #Assign an unique number to each country
+    country = data['native_country']
+    cnt = 0
+    ctryDic = {}
+    for i in range(len(country)):
+        if '?' in country[i]:
+            missingV.append(i)
+        if (ctryDic.has_key(country[i])):
+            country[i] = ctryDic.get(country[i])
+        else:
+            ctryDic.update({country[i]: cnt})
+            country[i] = cnt
+            cnt = cnt + 1
+
+    #remove duplicate index in the missingV list.
+    missingVIndex = set(missingV)
+    #Update date with no missing value
+    data = ignoreMissingValue(data, missingVIndex)
+
+    #Normalize data
+    data['ID'] = min_max_normalize(ID)
+    data['age'] = min_max_normalize(age)
+    data['workclass'] = min_max_normalize(workclass)
+    data['fnlwgt'] = min_max_normalize(fnlwgt)
+    data['education'] = min_max_normalize(edu)
+    data['education_cat'] = min_max_normalize(edu_cat)
+    data['marital_status'] = min_max_normalize(marital)
+    data['occupation'] = min_max_normalize(occupation)
+    data['relationship'] = min_max_normalize(relationship)
+    data['race'] = min_max_normalize(race)
+    data['gender'] = min_max_normalize(gender)
+    data['capital_gain'] = min_max_normalize(capital_gain)
+    data['capital_loss'] = min_max_normalize(capital_loss)
+    data['hour_per_week'] = min_max_normalize(hourPweek)
+    data['native_country'] = min_max_normalize(country)
+
+    return data
+
+
+#Min_max normalization
 def min_max_normalize(data):
     data = map(float,data)
     minV = min(data)
@@ -86,26 +301,11 @@ def min_max_normalize(data):
 
 
 
-def preProcess_income(data):
-    ID = data['ID']
-    age = data['age']
-    workclass = data['workclass']
-    fnlwgt = data['fnlwgt']
-    edu = data['education']
-    edu_cat = data['education_cat']
-    marital = data['marital_status']
-    occupation = data['occupation']
-    relationship = data['relationship']
-    race = data['race']
-    gender = data['gender']
-    capital_gain = data['capital_gain']
-    capital_loss = data['capital_loss']
-    hourPweek = data['hour_per_week']
-    country = data['native_country']
 
 # input a list of header
-#
+#Write the preprocessed data into a file
 def write_preprocessed_data(data, filename, header):
+
     with open(filename, 'w') as f:
         f.write(''.join(str(h) for h in header) + '\n')
         length = len(data[header[0]])
@@ -120,7 +320,7 @@ def write_preprocessed_data(data, filename, header):
 
 
 
-
+#Write the result of Euclidean distance into a file
 def write_to_file_eulid(header, processed_data, output_file):
     """
     :param header: a const str
@@ -137,6 +337,7 @@ def write_to_file_eulid(header, processed_data, output_file):
                 if j!=i:
                     dist_matrix.append(OutputRow(j, processed_data[i].eulid(processed_data[j])))
 
+
             dist_matrix.sort(key=operator.attrgetter('value'))
             for k in range(K):
                 if k == 0:
@@ -145,6 +346,8 @@ def write_to_file_eulid(header, processed_data, output_file):
                     f.write(',' + str(dist_matrix[k].index) +',' +str(dist_matrix[k].value))
             f.write('\n')
 
+
+#Write the result of cosine similarity into a file
 def write_to_file_cos(header, processed_data, output_file):
     with open(output_file, 'w') as f:
         f.write(header)
@@ -162,12 +365,49 @@ def write_to_file_cos(header, processed_data, output_file):
             f.write('\n')
 
 
+#Ignore the rows which have a missinge value
+def ignoreMissingValue(data,index):
+    for i in range(len(data['ID'])):
+        if i in index:
+            del data['ID'][i]
+            del data['age'][i]
+            del data['workclass'][i]
+            del data['fnlwgt'][i]
+            del data['education'][i]
+            del data['education_cat'][i]
+            del data['marital_status'][i]
+            del data['occupation'][i]
+            del data['relationship'][i]
+            del data['race'][i]
+            del data['gender'][i]
+            del data['capital_gain'][i]
+            del data['capital_loss'][i]
+            del data['hour_per_week'][i]
+            del data['native_country'][i]
+    return data
+
 
 if __name__ == '__main__':
+    #Income data
+    rawIncome = readFile(incomeFile)
 
-    #rawIncome = readFile(incomeFile)
+    #preprocessing
+    incomeData = preProcess_income(rawIncome)
+    incomeHeader = ['age', 'workclass', 'fnlwgt', 'education_cat','marital_status', 'occupation','relationship','race',
+                    'gender','capital_gain','capital_loss','hour_per_week','native_country']
+    write_preprocessed_data(incomeData,incomePreprocessed,incomeHeader)
+    income = []
+    dist_matrix_income = []
+    for i in range(len(incomeData['ID'])):
+        income.append(IncomeNode(incomeData,i))
+
+    #Euclidean distance
+    write_to_file_eulid(header_income,income,income_output_elud)
+    #Cosine similarity
+    write_to_file_cos(header_income,income,income_output_cos)
+
+    #Iris data
     rawIris = readFile(IrisFile)
-    #preProcess_income(rawIncome)
     data = preProcess_Iris(rawIris)
     write_preprocessed_data(data,IrisPreprocessed,['sepal_length', 'sepal_width', 'petal_length', 'petal_width'])
     irises = []
@@ -175,7 +415,8 @@ if __name__ == '__main__':
     for i in range(len(data['sepal_length'])):
         irises.append(IrisNode(data, i))
 
+    #Euclidean distance
     write_to_file_eulid(header_iris, irises, iris_output_elud)
+    #Cosine similarity
     write_to_file_cos(header_iris, irises, iris_output_cos)
-
 
