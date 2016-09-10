@@ -1,7 +1,7 @@
 import csv
 import math
 import operator
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 
 #Set k = 4.
@@ -324,7 +324,7 @@ def write_preprocessed_data(data, filename, header):
 def write_to_file_eulid(header, processed_data, output_file):
     """
     :param header: a const str
-    :param processed_data: list of iris node
+    :param processed_data: list of nodes
     :param output_file: a str
     :return: none
     """
@@ -364,6 +364,21 @@ def write_to_file_cos(header, processed_data, output_file):
                     f.write(',' + str(dist_matrix[k].index) + ',' + str(dist_matrix[k].value))
             f.write('\n')
 
+
+def outlier_detection(column):
+    """
+    :param column: a column of a dataset
+    :return: list of outliers' tranaction id
+    """
+    outlier = []
+    u = np.mean(column)
+    sd = np.std(column)
+    for i in range(len(column)):
+        if column[i] < u + 3*sd and column[i] > u - 3*sd:
+            continue
+        else:
+            outlier.append(i)
+    return outlier
 
 #Ignore the rows which have a missinge value
 def ignoreMissingValue(data,index):
