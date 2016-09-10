@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 K = 4
 IrisFile = 'Iris.csv'
 IrisPreprocessed = 'Iris_Pre.csv'
-iris_output = 'Iris_output.csv'
+iris_output_elud = 'Iris_output_elud.csv'
+iris_output_cos = 'Iris_output_cos.csv'
 incomeFile = 'module2BusinessContext_v1.1.csv'
 header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
 # Normalize the columns in order to minimize the difference
@@ -38,7 +39,14 @@ class IrisNode:
         sum += (self.petal_width - other.petal_width) * (self.petal_width - other.petal_width)
         return math.sqrt(sum)
 
-    #TODO: proximity
+    def cos_similarity(self, other):
+        multi = self.sepal_length * other.sepal_length + self.sepal_width * other.sepal_width \
+                 + self.petal_length * other.petal_length + self.petal_width * other.petal_width
+        sq1 = self.sepal_length * self.sepal_length + self.sepal_width * self.sepal_width \
+                + self.petal_length * self.petal_length + self.petal_width * self.petal_width
+        sq2 = other.sepal_length * other.sepal_length + other.sepal_width * other.sepal_width \
+                + other.petal_length * other.petal_length + other.petal_width * other.petal_width
+        return multi / (math.sqrt(sq1) * math.sqrt(sq2))
 
 
 class OutputRow:
@@ -129,7 +137,14 @@ def write_preprocessed_data(data, filename, header):
 
 
 
+
 def write_to_file_eulid(header, processed_data, output_file):
+    """
+    :param header: a const str
+    :param processed_data: list of iris node
+    :param output_file: a str
+    :return: none
+    """
     with open(output_file, 'w') as f:
         f.write(header)
         for i in range(len(processed_data)):
@@ -147,6 +162,23 @@ def write_to_file_eulid(header, processed_data, output_file):
                     f.write(',' + str(dist_matrix[k].index) +',' +str(dist_matrix[k].value))
             f.write('\n')
 
+def write_to_file_cos(header, processed_data, output_file):
+    with open(output_file, 'w') as f:
+        f.write(header)
+        for i in range(len(processed_data)):
+            dist_matrix = []
+            for j in range(len(processed_data)):
+                if j != i:
+                    dist_matrix.append(OutputRow(j, processed_data[i].cos_similarity(processed_data[j])))
+            dist_matrix.sort(key = operator.attrgetter('value'), reverse=True)
+            for k in range(K):
+                if k == 0:
+                    f.write(str(i) + ',' + str(dist_matrix[k].index) + ',' + str(dist_matrix[k].value))
+                else:
+                    f.write(',' + str(dist_matrix[k].index) + ',' + str(dist_matrix[k].value))
+            f.write('\n')
+
+
 
 if __name__ == '__main__':
 
@@ -160,7 +192,7 @@ if __name__ == '__main__':
     for i in range(len(data['sepal_length'])):
         irises.append(IrisNode(data, i))
 
-    write_to_file_eulid(header_iris, irises, iris_output)
-
+    write_to_file_eulid(header_iris, irises, iris_output_elud)
+    write_to_file_cos(header_iris, irises, iris_output_cos)
 
 
