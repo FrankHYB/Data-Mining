@@ -1,8 +1,14 @@
 import csv
 import math
+import operator
 import numpy as np
 import matplotlib.pyplot as plt
 
+K = 4
+IrisFile = 'Iris.csv'
+iris_output = 'Iris_output.csv'
+incomeFile = 'module2BusinessContext_v1.1.csv'
+header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
 # Normalize the columns in order to minimize the difference
 max_sepal_length = 0.0
 min_sepal_length = 0.0
@@ -18,11 +24,11 @@ diff_petal_length, diff_petal_width = 0.0, 0.0
 
 class IrisNode:
 
-    def __init__(self, data):
-        self.sepal_length = float(data[0])
-        self.sepal_width = float(data[1])
-        self.petal_length = float(data[2])
-        self.petal_width = float(data[3])
+    def __init__(self, data, i):
+        self.sepal_length = float(data['sepal_length'][i])
+        self.sepal_width = float(data['sepal_width'][i])
+        self.petal_length = float(data['petal_length'][i])
+        self.petal_width = float(data['petal_width'][i])
 
     def eulid(self, other):
         sum = 0
@@ -32,6 +38,12 @@ class IrisNode:
         sum += (self.petal_width - other.petal_width) * (self.petal_width - other.petal_width)
         return math.sqrt(sum)
 
+    #TODO: Another proximity
+
+class OutputRow:
+    def __init__(self, index, value):
+        self.index = index
+        self.value = value
 
 
 def readFile(filename):
@@ -50,10 +62,10 @@ def readFile(filename):
 
 def preProcess_Iris(data):
     #columns
-    sepal_length = data['sepal_length']
-    sepal_width = data['sepal_width']
-    petal_length = data['petal_length']
-    petal_width = data['petal_width']
+    sepal_length = [float(ele) for ele in data['sepal_length']]
+    sepal_width = [float(ele) for ele in data['sepal_width']]
+    petal_length = [float(ele) for ele in data['petal_length']]
+    petal_width = [float(ele) for ele in data['petal_width']]
 
     sepal_length.sort()
     max_sepal_length = sepal_length[len(sepal_length) - 1]
@@ -106,13 +118,37 @@ def preProcess_income(data):
     hourPweek = data['hour_per_week']
     country = data['native_country']
 
+def write_to_file_eulid(header, processed_data, output_file):
+    with open(output_file, 'w') as f:
+        f.write(header)
+        for i in range(len(processed_data)):
+            dist_matrix = []
+
+            for j in range(len(processed_data)):
+                if j!=i:
+                    dist_matrix.append(OutputRow(j, processed_data[i].eulid(processed_data[j])))
+
+            dist_matrix.sort(key=operator.attrgetter('value'))
+            for k in range(K):
+                if k == 0:
+                    f.write(str(i) + ',' + str(dist_matrix[k].index) +',' +str(dist_matrix[k].value))
+                else:
+                    f.write(',' + str(dist_matrix[k].index) +',' +str(dist_matrix[k].value))
+            f.write('\n')
 
 
-#Main
-IrisFile = 'Iris.csv'
-incomeFile = 'module2BusinessContext_v1.1.csv'
-#rawIncome = readFile(incomeFile)
-rawIris = readFile(IrisFile)
-#preProcess_income(rawIncome)
-#preProcess_Iris(rawIris)
+if __name__ == '__main__':
+
+    #rawIncome = readFile(incomeFile)
+    rawIris = readFile(IrisFile)
+    #preProcess_income(rawIncome)
+    data = preProcess_Iris(rawIris)
+    irises = []
+    dist_matrix = []
+    for i in range(len(data['sepal_length'])):
+        irises.append(IrisNode(data, i))
+
+    write_to_file_eulid(header_iris, irises, iris_output)
+
+
 
