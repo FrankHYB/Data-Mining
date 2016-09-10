@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 K = 4
 IrisFile = 'Iris.csv'
+IrisPreprocessed = 'Iris_Pre.csv'
 iris_output = 'Iris_output.csv'
 incomeFile = 'module2BusinessContext_v1.1.csv'
 header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
@@ -19,8 +20,7 @@ min_petal_length = 0.0
 max_petal_width = 0.0
 min_petal_width = 0.0
 
-diff_sepal_length, diff_sepal_width = 0.0, 0.0
-diff_petal_length, diff_petal_width = 0.0, 0.0
+
 
 class IrisNode:
 
@@ -38,7 +38,8 @@ class IrisNode:
         sum += (self.petal_width - other.petal_width) * (self.petal_width - other.petal_width)
         return math.sqrt(sum)
 
-    #TODO: Another proximity
+    #TODO: proximity
+
 
 class OutputRow:
     def __init__(self, index, value):
@@ -70,27 +71,23 @@ def preProcess_Iris(data):
     sepal_length.sort()
     max_sepal_length = sepal_length[len(sepal_length) - 1]
     min_sepal_length = sepal_length[0]
-    diff_sepal_length = max_sepal_length - min_sepal_length
 
     sepal_width.sort()
     max_sepal_width = sepal_width[len(sepal_width) - 1]
     min_sepal_width = sepal_width[0]
-    diff_sepal_width = max_sepal_width - min_sepal_width
 
     petal_length.sort()
     max_petal_length = petal_length[len(petal_length) - 1]
     min_petal_length = petal_length[0]
-    diff_petal_length = max_petal_length - min_petal_length
 
     petal_width.sort()
     max_petal_width = petal_width[len(petal_width) - 1]
     min_petal_width = petal_width[0]
-    diff_petal_width = max_petal_width - min_petal_width
 
-    data['sepal_length'] = min_max_normalization(sepal_length, min_sepal_length, max_sepal_length)
-    data['sepal_width'] = min_max_normalization(sepal_width, min_sepal_width, max_sepal_width)
-    data['petal_length'] = min_max_normalization(petal_length, min_petal_length, max_petal_length)
-    data['petal_width'] = min_max_normalization(petal_width, min_petal_width, max_petal_width)
+    data['sepal_length'] = min_max_normalization([float(ele) for ele in data['sepal_length']], min_sepal_length, max_sepal_length)
+    data['sepal_width'] = min_max_normalization([float(ele) for ele in data['sepal_width']], min_sepal_width, max_sepal_width)
+    data['petal_length'] = min_max_normalization([float(ele) for ele in data['petal_length']], min_petal_length, max_petal_length)
+    data['petal_width'] = min_max_normalization([float(ele) for ele in data['petal_width']], min_petal_width, max_petal_width)
 
     return data
 
@@ -118,6 +115,20 @@ def preProcess_income(data):
     hourPweek = data['hour_per_week']
     country = data['native_country']
 
+# input a list of header
+#
+def write_preprocessed_data(data, filename, header):
+    with open(filename, 'w') as f:
+        f.write(''.join(str(h) for h in header) + '\n')
+        length = len(data[header[0]])
+        for i in range(length):
+            for j in range(len(header)):
+                f.write(str(data[header[j]][i]))
+            f.write('\n')
+
+
+
+
 def write_to_file_eulid(header, processed_data, output_file):
     with open(output_file, 'w') as f:
         f.write(header)
@@ -143,6 +154,7 @@ if __name__ == '__main__':
     rawIris = readFile(IrisFile)
     #preProcess_income(rawIncome)
     data = preProcess_Iris(rawIris)
+    write_preprocessed_data(data,IrisPreprocessed,['sepal_length', 'sepal_width', 'petal_length', 'petal_width'])
     irises = []
     dist_matrix = []
     for i in range(len(data['sepal_length'])):
