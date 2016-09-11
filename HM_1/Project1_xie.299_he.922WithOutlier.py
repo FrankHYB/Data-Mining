@@ -2,6 +2,7 @@ import csv
 import math
 import operator
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
 
 #Set k = 4.
@@ -15,7 +16,7 @@ iris_output_cos = 'Iris_output_cos.csv'
 header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
 
 #Define filenames for Income output
-incomeFile = 'module2BusinessContext_v1.1.csv'
+incomeFile = 'income_tr.csv'
 incomePreprocessed = 'Income_Pre.csv'
 income_output_elud = 'Income_output_elud.csv'
 income_output_cos = 'Income_output_cos.csv'
@@ -423,7 +424,6 @@ def ignoreMissingValueAndOutlier(data,index):
     length = len(data['ID'])
     for i in range(length,0,-1):
         if i in index:
-            print i
             del data['ID'][i]
             del data['age'][i]
             del data['workclass'][i]
@@ -441,8 +441,24 @@ def ignoreMissingValueAndOutlier(data,index):
             del data['native_country'][i]
     return data
 
+def append_header():
+    diff = K - 4
+    start = 5
+    iris = header_iris[:len(header_iris) - 2]
+    income = header_income[:len(header_income) - 2]
+    for i in range(diff):
+        iris = iris +',' + str(start)+'th,'+str(start)+'-dist'
+        income = income + ',' + str(start)+'th,'+str(start)+'-dist'
+        start+=1
+    iris += '\n'
+    income += '\n'
+    return iris, income
+
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        K = int(sys.argv[1])
+        header_iris, header_income = append_header()
 
     #Iris data
     rawIris = readFile(IrisFile)
