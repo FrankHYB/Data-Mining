@@ -3,24 +3,23 @@ import math
 import operator
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
 
-#Set k = 4.
-K = 4
+#Set Default k = 5.
+K = 5
 
 #Define filenames for Iris output
 IrisFile = 'Iris.csv'
 IrisPreprocessed = 'Iris_Pre.csv'
 iris_output_elud = 'Iris_output_elud.csv'
 iris_output_cos = 'Iris_output_cos.csv'
-header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
+header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist,5th,5-dist\n'
 
 #Define filenames for Income output
 incomeFile = 'income_tr.csv'
 incomePreprocessed = 'Income_Pre.csv'
 income_output_elud = 'Income_output_elud.csv'
 income_output_cos = 'Income_output_cos.csv'
-header_income = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
+header_income = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist,5th,5-dist\n'
 
 outlierList = []
 
@@ -32,7 +31,7 @@ class IrisNode:
         self.sepal_width = float(data['sepal_width'][i])
         self.petal_length = float(data['petal_length'][i])
         self.petal_width = float(data['petal_width'][i])
-
+        self.cla = data['class'][i]
 
     #Euclidean distance
     def eulid(self, other):
@@ -74,7 +73,7 @@ class IncomeNode:
         self.capital_loss = data['capital_loss'][i]
         self.hourPweek = data['hour_per_week'][i]
         self.country = data['native_country'][i]
-
+        self.cla = data['class'][i]
 
     
     #Euclidean distance
@@ -349,7 +348,7 @@ def min_max_normalize(data):
 def write_preprocessed_data(data, filename, header):
 
     with open(filename, 'w') as f:
-        f.write(''.join(str(h) for h in header) + '\n')
+        f.write(''.join(str(h) + ',' for h in header) + '\n')
         length = len(data[header[0]])
         for i in range(length):
             for j in range(len(header)):
@@ -404,7 +403,7 @@ def write_to_file_cos(header, processed_data, output_file):
                     f.write(str(i) + ',' + str(dist_matrix[k].index) + ',' + str(dist_matrix[k].value))
                 else:
                     f.write(',' + str(dist_matrix[k].index) + ',' + str(dist_matrix[k].value))
-            f.write('\n')
+            f.write(',' + processed_data[i].cla + '\n')
 
 
 def outlier_detection(column):
@@ -445,8 +444,8 @@ def ignoreMissingValueAndOutlier(data,index):
     return data
 
 def append_header():
-    diff = K - 4
-    start = 5
+    diff = K - 5
+    start = 6
     iris = header_iris[:len(header_iris) - 2]
     income = header_income[:len(header_income) - 2]
     for i in range(diff):
@@ -456,6 +455,8 @@ def append_header():
     iris += '\n'
     income += '\n'
     return iris, income
+
+
 
 
 if __name__ == '__main__':

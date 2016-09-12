@@ -1,0 +1,8 @@
+There are two python scripts, one deals with outliers the other one doesn't.
+They are both written in python 2.7
+If you run these two scripts in command line, you may need to install numpy:
+>pip install numpy
+Then you can kick off the script by using the command line:
+>python script_name k
+K could be user defined value which is no less than 5
+5 is the default value

@@ -2,7 +2,6 @@ import csv
 import math
 import operator
 import numpy as np
-import matplotlib.pyplot as plt
 
 #Set k = 4.
 K = 4
@@ -15,7 +14,7 @@ iris_output_cos = 'Iris_output_cos.csv'
 header_iris = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
 
 #Define filenames for Income output
-incomeFile = 'module2BusinessContext_v1.1.csv'
+incomeFile = 'income_tr.csv'
 incomePreprocessed = 'Income_Pre.csv'
 income_output_elud = 'Income_output_elud.csv'
 income_output_cos = 'Income_output_cos.csv'
