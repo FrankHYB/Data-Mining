@@ -23,47 +23,6 @@ income_output_cos = 'Income_output_cos.csv'
 header_income = 'Transaction ID,1st,1-dist,2nd,2-dist,3rd,3-dist,4th,4-dist\n'
 
 outlierList = []
-class IncomeNode:
-
-    #Initialize
-    def __init__(self, data, i):
-        self.ID = data['ID'][i]
-        self.age = data['age'][i]
-        self.workclass = data['workclass'][i]
-        self.fnlwgt = data['fnlwgt'][i]
-        self.edu = data['education'][i]
-        self.edu_cat = data['education_cat'][i]
-        self.marital = data['marital_status'][i]
-        self.occupation = data['occupation'][i]
-        self.relationship = data['relationship'][i]
-        self.race = data['race'][i]
-        self.gender = data['gender'][i]
-        self.capital_gain = data['capital_gain'][i]
-        self.capital_loss = data['capital_loss'][i]
-        self.hourPweek = data['hour_per_week'][i]
-        self.country = data['native_country'][i]
-
-
-    #Euclidean distance
-    def eulid(self,other):
-        x = [self.age,self.workclass,self.fnlwgt,self.edu_cat,self.marital,self.occupation,self.relationship,self.race,
-             self.gender,self.capital_gain,self.capital_loss,self.hourPweek,self.country]
-        y = [other.age,other.workclass,other.fnlwgt,other.edu_cat,other.marital,other.occupation,other.relationship,other.race,
-             other.gender,other.capital_gain,other.capital_loss,other.hourPweek,other.country]
-        dist = np.linalg.norm(np.subtract(x,y))
-        return round(dist,5)
-
-    #Cosine similarity
-    def cos_similarity(self, other):
-        x = [self.age, self.workclass, self.fnlwgt, self.edu_cat, self.marital, self.occupation, self.relationship,self.race,
-             self.gender, self.capital_gain, self.capital_loss, self.hourPweek, self.country]
-
-        y = [other.age, other.workclass, other.fnlwgt, other.edu_cat, other.marital, other.occupation, other.relationship, other.race,
-         other.gender, other.capital_gain, other.capital_loss, other.hourPweek, other.country]
-        numerator = np.dot(x, y)
-        denominator = np.linalg.norm(x) * np.linalg.norm(y)
-        return round(numerator / float(denominator), 5)
-
 
 class IrisNode:
 
@@ -95,6 +54,50 @@ class IrisNode:
                 + other.petal_length * other.petal_length + other.petal_width * other.petal_width
         return multi / (math.sqrt(sq1) * math.sqrt(sq2))
 
+
+class IncomeNode:
+
+    #Initialize
+    def __init__(self, data, i):
+        self.ID = data['ID'][i]
+        self.age = data['age'][i]
+        self.workclass = data['workclass'][i]
+        self.fnlwgt = data['fnlwgt'][i]
+        self.edu = data['education'][i]
+        self.edu_cat = data['education_cat'][i]
+        self.marital = data['marital_status'][i]
+        self.occupation = data['occupation'][i]
+        self.relationship = data['relationship'][i]
+        self.race = data['race'][i]
+        self.gender = data['gender'][i]
+        self.capital_gain = data['capital_gain'][i]
+        self.capital_loss = data['capital_loss'][i]
+        self.hourPweek = data['hour_per_week'][i]
+        self.country = data['native_country'][i]
+
+
+    
+    #Euclidean distance
+    def eulid(self,other):
+        x = [self.age,self.workclass,self.fnlwgt,self.edu_cat,self.marital,self.occupation,self.relationship,self.race,
+             self.gender,self.capital_gain,self.capital_loss,self.hourPweek,self.country]
+        y = [other.age,other.workclass,other.fnlwgt,other.edu_cat,other.marital,other.occupation,other.relationship,other.race,
+             other.gender,other.capital_gain,other.capital_loss,other.hourPweek,other.country]
+        total = sum(math.pow(element1 - element2, 2) for element1, element2 in zip(x, y))
+        dist = math.sqrt(total)
+        return round(dist,5)
+
+    #Cosine similarity
+    def cos_similarity(self, other):
+        x = [self.age, self.workclass, self.fnlwgt, self.edu_cat, self.marital, self.occupation, self.relationship,self.race,
+             self.gender, self.capital_gain, self.capital_loss, self.hourPweek, self.country]
+
+        y = [other.age, other.workclass, other.fnlwgt, other.edu_cat, other.marital, other.occupation, other.relationship, other.race,
+         other.gender, other.capital_gain, other.capital_loss, other.hourPweek, other.country]
+        numerator = sum(element1 * element2 for element1, element2 in zip(x, y))
+        magX = math.sqrt(sum([element1 * element1 for element1 in x]))
+        magY = math.sqrt(sum([element2 * element2 for element2 in y]))
+        return round(numerator / float(magX*magY), 5)
 
 
 class OutputRow:
