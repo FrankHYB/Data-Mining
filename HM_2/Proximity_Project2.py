@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #Set k = 5.
-K = 5
+K = 10
 
 #Define filenames for Iris output
 IrisFile = 'Iris.csv'
@@ -144,7 +144,7 @@ def preProcess_Iris(data):
 
 #Preprocess income dataset.
 #Translate strings to numbers; handle missing values; normalization; outlier
-def preProcess_income(data):
+def preProcess_income(data, ifTestData):
     missingV = []
 
     ID = data['ID']
@@ -290,29 +290,30 @@ def preProcess_income(data):
             cnt = cnt + 1
     country = map(float,country)
 
+    if not ifTestData:
+        #get index of outliers
+        outlier_detection(age)
+        outlier_detection(workclass)
+        outlier_detection(fnlwgt)
+        outlier_detection(edu)
+        outlier_detection(edu_cat)
+        outlier_detection(marital)
+        outlier_detection(occupation)
+        outlier_detection(relationship)
+        outlier_detection(race)
+        outlier_detection(gender)
+        outlier_detection(capital_gain)
+        outlier_detection(capital_loss)
+        outlier_detection(hourPweek)
+        outlier_detection(country)
+        # remove duplicate index in the outlier list.
+        outlier = set(outlierList)
 
-    #get index of outliers
-    outlier_detection(age)
-    outlier_detection(workclass)
-    outlier_detection(fnlwgt)
-    outlier_detection(edu)
-    outlier_detection(edu_cat)
-    outlier_detection(marital)
-    outlier_detection(occupation)
-    outlier_detection(relationship)
-    outlier_detection(race)
-    outlier_detection(gender)
-    outlier_detection(capital_gain)
-    outlier_detection(capital_loss)
-    outlier_detection(hourPweek)
-    outlier_detection(country)
-    outlier = set(outlierList)
 
-
-    # remove duplicate index in the missingV list.
-    missingVIndex = set(missingV)
-    # Update data with no missing value
-    data = ignoreMissingValueAndOutlier(data, missingVIndex.union(outlier))
+        # remove duplicate index in the missingV list.
+        missingVIndex = set(missingV)
+        # Update data with no missing value
+        data = ignoreMissingValueAndOutlier(data, missingVIndex.union(outlier))
 
     #Normalize data
     data['age'] = min_max_normalize(age)
@@ -475,8 +476,10 @@ if __name__ == '__main__':
     testRawIncome = readFile(incomeTest)
 
     #preprocessing
-    incomeData = preProcess_income(rawIncome)
-    testIncomeData = preProcess_income(testRawIncome)
+    ifTestData = 0
+    incomeData = preProcess_income(rawIncome,ifTestData)
+    ifTestData = 1
+    testIncomeData = preProcess_income(testRawIncome,ifTestData)
 
     #Initialize
     income = []
