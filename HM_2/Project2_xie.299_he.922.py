@@ -50,12 +50,12 @@ def posterior_knn(classifer, node, all_nodes):
 
     for ele in node.get_neighbors():
         num[all_nodes[int(ele)].cla] +=1
-
+        #print ele + '\n'
     prediction = ''
     probability =0.0
 
     for key in num:
-        if(num[key] / K > probability):
+        if((num[key] * 1.0 / K) > probability):
             probability = num[key] * 1.0 / K
             prediction = key
 
