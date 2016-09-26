@@ -2,6 +2,7 @@ import csv
 import math
 import operator
 import numpy as np
+from collections import Counter
 import matplotlib.pyplot as plt
 
 #Set k = 5.
@@ -428,6 +429,7 @@ def posterior_knn(neighbor):
 def write_to_file(filename, header, nodes):
     accuracy = 0.0
     correct = 0
+    table = []
     with open(filename, 'w') as f:
         f.write(header)
         count = 1
@@ -435,11 +437,13 @@ def write_to_file(filename, header, nodes):
             f.write(str(count) + ',' + node.clas + ',' + node.prediction + ',' + str(node.posterior))
             f.write('\n')
             count += 1
+            table.append((node.clas,node.prediction))
             if str.strip(node.clas) == str.strip(node.prediction):
                 correct += 1
-
+    print 'Use for confusion matrices'
+    print Counter(table)
     accuracy = float(correct)/len(nodes)
-    print "Accuracy for " + filename + ' ' + str(accuracy)
+    print "Accuracy for " + filename + ' ' + str(accuracy) + '\n'
 
 
 if __name__ == '__main__':
