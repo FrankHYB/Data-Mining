@@ -470,27 +470,27 @@ if __name__ == '__main__':
 
 
 
-    #Euclidean distance
-    #write_to_file_eulid(header, irises, iris_output_elud)
-    #Cosine similarity
-    #write_to_file_cos(header, irises, iris_output_cos)
-
-
     #Income data
-    #rawIncome = readFile(incomeFile)
-    #testIncome = readFile(incomeTest)
-    #preprocessing
-    #incomeData = preProcess_income(rawIncome)
-    #testIncomeData = preProcess_income(testIncome)
-    #incomeHeader = ['age', 'workclass', 'fnlwgt', 'education_cat','marital_status', 'occupation','relationship','race',
-     #               'gender','capital_gain','capital_loss','hour_per_week','native_country']
-    #write_preprocessed_data(incomeData,incomePreprocessed,incomeHeader)
-    #income = []
-    #dist_matrix_income = []
-    #for i in range(len(testIncomeData['ID'])):
-     #   income.append(IncomeNode(testIncomeData,i))
+    rawIncome = readFile(incomeFile)
+    testRawIncome = readFile(incomeTest)
 
-    #Euclidean distance
-    #write_to_file_eulid(header,income,income_output_elud)
-    #Cosine similarity
-    #write_to_file_cos(header,income,income_output_cos)
+    #preprocessing
+    incomeData = preProcess_income(rawIncome)
+    testIncomeData = preProcess_income(testRawIncome)
+
+    #Initialize
+    income = []
+    testIncome = []
+    for i in range(len(incomeData['ID'])):
+        income.append(IncomeNode(incomeData, i))
+    for i in range(len(testIncomeData['ID'])):
+        testIncome.append(IncomeNode(testIncomeData,i))
+
+    # KNN
+    for i in range(len(testIncome)):
+        neighbor = findNeighbors(testIncome[i], income)
+        pred, prob = posterior_knn(neighbor)
+        testIncome[i].set_prediction(pred,prob)
+
+    write_to_file(Income_Prediction, Header, testIncome)
+
