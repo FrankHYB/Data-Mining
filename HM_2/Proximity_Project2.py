@@ -16,8 +16,6 @@ IrisTest = 'Iris_Test.csv'
 incomeFile = 'income_tr.csv'
 incomeTest = 'income_te.csv'
 
-outlierList = []
-
 Header = 'TransactionID, Actual Class, Predicted Class, Posterior Probability\n'
 Iris_Prediction = 'Iris_Prediction.csv'
 Income_Prediction = 'Income_Prediction.csv'
@@ -149,7 +147,6 @@ def mostFrequent(data):
 #Preprocess income dataset.
 #Translate strings to numbers; handle missing values; normalization; outlier
 def preProcess_income(data, ifTestData):
-    missingV = []
 
     ID = data['ID']
     ID = map(float,ID)
@@ -385,6 +382,7 @@ def findNeighbors(testData, data):
     return neighbors
 
 
+#KNN and calculate posterior probability
 def posterior_knn(neighbor):
     #Calculate the number of classifiers within K neighbors
     classifer = {}
