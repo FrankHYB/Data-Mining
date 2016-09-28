@@ -20,6 +20,11 @@ Header = 'TransactionID, Actual Class, Predicted Class, Posterior Probability\n'
 Iris_Prediction = 'Iris_Prediction.csv'
 Income_Prediction = 'Income_Prediction.csv'
 
+Iris_Unweighted_Prediction = 'Iris_Unweighted_Prediction'
+Income_Unweighted_Prediction = 'Income_Unweighted_Prediction'
+
+Iris_Weighted_Prediction = 'Iris_Weighted_Prediction.csv'
+Income_Weighted_Prediction = 'Income_Weighted_Prediction.csv'
 
 class IncomeNode:
 
@@ -365,47 +370,81 @@ def outlier_detection(column):
 
 
 #Find the K-nearest neighbors
-def findNeighbors(testData, data):
+def findNeighbors(testData, data, cos = False):
     neighbors = []
     dist = []
 
     #Calculate Euclidean Distance between one test data and all training data
     for i in range(len(data)):
-        dist.append((testData.eulid(data[i]),data[i]))
+        if cos:
+            dist.append((testData.cos_similarity(data[i]),data[i]))
+        else:
+            dist.append((testData.eulid(data[i]),data[i]))
 
-    dist.sort(key=operator.itemgetter(0))
+    if cos:
+        dist.sort(key=operator.itemgetter(0), reverse= True)
+    else:
+        dist.sort(key=operator.itemgetter(0))
+
 
     #Get first k neighbors
     for k in range(K):
         neighbors.append(dist[k])
 
-    return neighbors
+    return neighbors # tuple[0] distance tuple[1] neighor node
 
 
 #KNN and calculate posterior probability
-def posterior_knn(neighbor):
+def posterior_knn(neighbor, weight = False, cos = False):
     #Calculate the number of classifiers within K neighbors
     classifer = {}
+    weighted_k = K
+    if weight:
+        weighted_k = 0
     for i in range(len(neighbor)):
+
         className = neighbor[i][1].clas
         if className in classifer:
-            classifer[className] += 1
+            if weight:
+                if cos:
+                    classifer[className] += neighbor[i][0]
+                    weighted_k += neighbor[i][0]
+                else:
+                    classifer[className] += 1 / neighbor[i][0]
+                    weighted_k += 1 / neighbor[i][0]
+
+            else:
+                classifer[className] += 1
+
         else:
-            classifer[className] = 1
+            if weight:
+                if cos:
+                    classifer[className] = neighbor[i][0]
+                    weighted_k += neighbor[i][0]
+                else:
+                    classifer[className] = 1 / neighbor[i][0]
+                    weighted_k += 1 / neighbor[i][0]
+            else:
+                classifer[className] = 1
+
+
 
     prediction = ''
     probability = 0.0
 
+
     for key in classifer:
-        if ((classifer[key] * 1.0 / K) > probability):
-            probability = classifer[key] * 1.0 / K
+        if ((classifer[key] * 1.0 / weighted_k) > probability):
+            probability = classifer[key] * 1.0 / weighted_k
             prediction = key
+
+
 
     return prediction,probability
 
 
 #Generate output file
-def write_to_file(filename, header, nodes):
+def write_to_file(filename, header,  nodes):
     accuracy = 0.0
     correct = 0
     table = []
@@ -444,13 +483,29 @@ if __name__ == '__main__':
     for i in range(len(testIrisData['sepal_length'])):
         irisesTest.append(IrisNode(testIrisData, i))
 
-    #KNN
+    #Eliud Unweighted_KNN
     for i in range(len(irisesTest)):
         neighbor = findNeighbors(irisesTest[i],irises)
         pred,prob = posterior_knn(neighbor)
         irisesTest[i].set_prediction(pred, prob)
 
     write_to_file(Iris_Prediction,Header,irisesTest)
+    #Cos unweighted KNN
+    for i in range(len(irisesTest)):
+        neighbor = findNeighbors(irisesTest[i],irises, True)
+        pred,prob = posterior_knn(neighbor,False,True)
+        irisesTest[i].set_prediction(pred, prob)
+
+    write_to_file(Iris_Unweighted_Prediction,Header,irisesTest)
+
+    #Weighted KNN
+
+    for i in range(len(irisesTest)):
+        neighbor = findNeighbors(irisesTest[i],irises, True)
+        pred,prob = posterior_knn(neighbor, True ,True)
+        irisesTest[i].set_prediction(pred, prob)
+
+    write_to_file(Iris_Weighted_Prediction,Header,irisesTest)
 
 
 
@@ -480,3 +535,18 @@ if __name__ == '__main__':
 
     write_to_file(Income_Prediction, Header, testIncome)
 
+    #Cos unweighted KNN
+    for i in range(len(testIncome)):
+        neighbor = findNeighbors(testIncome[i],income, True)
+        pred,prob = posterior_knn(neighbor,False,True)
+        testIncome[i].set_prediction(pred, prob)
+
+    write_to_file(Income_Unweighted_Prediction,Header,testIncome)
+
+    #Cos Weighted KNN
+    for i in range(len(testIncome)):
+        neighbor = findNeighbors(testIncome[i], income, True)
+        pred, prob = posterior_knn(neighbor, True,True)
+        testIncome[i].set_prediction(pred,prob)
+
+    write_to_file(Income_Weighted_Prediction, Header, testIncome)
