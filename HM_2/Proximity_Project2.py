@@ -6,7 +6,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 #Set k = 5.
-K = 10
+K = 7
 
 #Define filenames for Iris output
 IrisFile = 'Iris.csv'
@@ -143,6 +143,9 @@ def preProcess_Iris(data):
     return data
 
 
+def mostFrequent(data):
+    return max(set(data), key=data.count)
+
 #Preprocess income dataset.
 #Translate strings to numbers; handle missing values; normalization; outlier
 def preProcess_income(data, ifTestData):
@@ -157,11 +160,13 @@ def preProcess_income(data, ifTestData):
     #preprocessing workclass
     #Assign an unique number to each workclass
     workclass = data['workclass']
+    mostCom = mostFrequent(workclass)
+
     cnt = 0
     wcDic = {}
     for i in range(len(workclass)):
         if '?' in workclass[i]:
-            missingV.append(i)
+            workclass[i] = mostCom
 
         if(wcDic.has_key(workclass[i])):
             workclass[i] = wcDic.get(workclass[i])
@@ -170,6 +175,7 @@ def preProcess_income(data, ifTestData):
             workclass[i] = cnt
             cnt = cnt+1
     workclass = map(float,workclass)
+
 
 
 
@@ -213,11 +219,12 @@ def preProcess_income(data, ifTestData):
     # preprocessing occupation
     #Assign an unique number to each occupation
     occupation = data['occupation']
+    mostCom = mostFrequent(occupation)
     cnt = 0
     ocpDic = {}
     for i in range(len(occupation)):
         if '?' in occupation[i]:
-            missingV.append(i)
+            occupation[i] = mostCom
         if(ocpDic.has_key(occupation[i])):
             occupation[i] = ocpDic.get(occupation[i])
         else:
@@ -278,11 +285,14 @@ def preProcess_income(data, ifTestData):
     #preprocessing native_country
     #Assign an unique number to each country
     country = data['native_country']
+    mostCom = mostFrequent(country)
+
     cnt = 0
     ctryDic = {}
     for i in range(len(country)):
         if '?' in country[i]:
-            missingV.append(i)
+            country[i] = mostCom
+
         if (ctryDic.has_key(country[i])):
             country[i] = ctryDic.get(country[i])
         else:
@@ -293,28 +303,19 @@ def preProcess_income(data, ifTestData):
 
     if not ifTestData:
         #get index of outliers
-        outlier_detection(age)
-        outlier_detection(workclass)
-        outlier_detection(fnlwgt)
-        outlier_detection(edu)
-        outlier_detection(edu_cat)
-        outlier_detection(marital)
-        outlier_detection(occupation)
-        outlier_detection(relationship)
-        outlier_detection(race)
-        outlier_detection(gender)
-        outlier_detection(capital_gain)
-        outlier_detection(capital_loss)
-        outlier_detection(hourPweek)
-        outlier_detection(country)
-        # remove duplicate index in the outlier list.
-        outlier = set(outlierList)
+        age = outlier_detection(age)
+        workclass = outlier_detection(workclass)
+        fnlwgt = outlier_detection(fnlwgt)
+        edu = outlier_detection(edu)
+        edu_cat = outlier_detection(edu_cat)
+        marital = outlier_detection(marital)
+        occupation = outlier_detection(occupation)
+        relationship = outlier_detection(relationship)
+        race = outlier_detection(race)
+        gender = outlier_detection(gender)
+        hourPweek = outlier_detection(hourPweek)
+        country = outlier_detection(country)
 
-
-        # remove duplicate index in the missingV list.
-        missingVIndex = set(missingV)
-        # Update data with no missing value
-        data = ignoreMissingValueAndOutlier(data, missingVIndex.union(outlier))
 
     #Normalize data
     data['age'] = min_max_normalize(age)
@@ -347,7 +348,7 @@ def min_max_normalize(data):
     return data
 
 
-
+#Detect outlier and assign the most frequent value to outlier
 def outlier_detection(column):
     """
     :param column: a column of a dataset
@@ -355,35 +356,15 @@ def outlier_detection(column):
     """
     u = np.mean(column)
     sd = np.std(column)
+    mostCom = mostFrequent(column)
+
     for i in range(len(column)):
         if column[i] < u + 3*sd and column[i] > u - 3*sd:
             continue
         else:
-            outlierList.append(i)
+            column[i] = mostCom
+    return column
 
-
-#Ignore the rows which have a missinge value
-def ignoreMissingValueAndOutlier(data,index):
-    index = sorted(index)
-    length = len(data['ID'])
-    for i in range(length,0,-1):
-        if i in index:
-            del data['ID'][i]
-            del data['age'][i]
-            del data['workclass'][i]
-            del data['fnlwgt'][i]
-            del data['education'][i]
-            del data['education_cat'][i]
-            del data['marital_status'][i]
-            del data['occupation'][i]
-            del data['relationship'][i]
-            del data['race'][i]
-            del data['gender'][i]
-            del data['capital_gain'][i]
-            del data['capital_loss'][i]
-            del data['hour_per_week'][i]
-            del data['native_country'][i]
-    return data
 
 
 #Find the K-nearest neighbors
