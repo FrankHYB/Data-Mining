@@ -4,9 +4,10 @@ import operator
 import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
 
 #Set k = 5.
-K = 7
+K = 10
 
 #Define filenames for Iris output
 IrisFile = 'Iris.csv'
@@ -464,6 +465,7 @@ def write_to_file(filename, header,  nodes):
     print "Accuracy for " + filename + ' ' + str(accuracy) + '\n'
 
 
+
 if __name__ == '__main__':
 
     #Load Iris data
@@ -550,3 +552,25 @@ if __name__ == '__main__':
         testIncome[i].set_prediction(pred,prob)
 
     write_to_file(Income_Weighted_Prediction, Header, testIncome)
+
+    # 1: <=50K, 0: >50K get roc plot
+    label = []
+    score = []
+    for node in testIncome:
+        if node.clas == ' <=50K':
+            label.append(0)
+            score.append(node.posterior)
+        else:
+            label.append(1)
+            score.append(node.posterior)
+
+    tpr, fpr, threshold = roc_curve(label, score, pos_label = 1)
+    roc_auc = auc(fpr, tpr)
+    plt.title('Income roc curve')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.plot(fpr, tpr, label = 'ROC curve (area = 0.2f)' %roc_auc)
+    plt.show()
+
