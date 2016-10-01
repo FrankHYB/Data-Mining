@@ -5,9 +5,9 @@ import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
-
+from sklearn.neighbors import KNeighborsClassifier
 #Set k = 5.
-K = 10
+K = 8
 
 #Define filenames for Iris output
 IrisFile = 'Iris.csv'
@@ -457,13 +457,72 @@ def write_to_file(filename, header,  nodes):
             f.write('\n')
             count += 1
             table.append((node.clas,node.prediction))
-            if str.strip(node.clas) == str.strip(node.prediction):
+            if node.clas == node.prediction:
                 correct += 1
     print 'Use for confusion matrices'
     print Counter(table)
     accuracy = float(correct)/len(nodes)
     print "Accuracy for " + filename + ' ' + str(accuracy) + '\n'
 
+#off-the-shelf implementation - sklearn
+def sk_implementation(train_nodes, test_nodes, income_data = False):
+    data_X = []
+    cla_Y = []
+    for node in train_nodes:
+        one_node = []
+        for key,value in node.__dict__.items():
+            if key == 'clas' or key == 'prediction' or key == 'posterior':
+                continue
+            one_node.append(float(value))
+        data_X.append(one_node)
+        #transform class labels to numbers
+        if income_data:
+            if node.clas == ' <=50K':
+                cla_Y.append(0)
+            else:
+                cla_Y.append(1)
+        else:
+            if node.clas == 'Iris-setosa':
+                cla_Y.append(0)
+            elif node.clas == 'Iris-versicolor':
+                cla_Y.append(1)
+            else:
+                cla_Y.append(2)
+
+    test_X = []
+    cla_test = []
+    for node in test_nodes:
+        one_node = []
+        for key,value in node.__dict__.items():
+            if key == 'clas' or key == 'prediction' or key == 'posterior':
+                continue
+            one_node.append(float(value))
+        test_X.append(one_node)
+        #transform class to label to numbers
+        if income_data:
+            if node.clas == ' <=50K':
+                cla_test.append(0)
+            else:
+                cla_test.append(1)
+        else:
+            if node.clas == 'Iris-setosa':
+                cla_test.append(0)
+            elif node.clas == 'Iris-versicolor':
+                cla_test.append(1)
+            else:
+                cla_test.append(2)
+    print cla_test
+    neigh = KNeighborsClassifier(n_neighbors= K, algorithm = 'auto', p = 2)
+    neigh.fit(data_X, cla_Y)
+    correct = 0
+    for i in range(len(test_X)):
+        label = neigh.predict(test_X[i])[0]
+        if label == cla_test[i]:
+            correct+=1
+    if income_data:
+        print 'Off-shelf-Implementation Accuracy for Income Data:' + str(correct * 1.0/len(test_X))
+    else:
+        print 'Off-shelf-Implementation Accuracy for Iris Data:' + str(correct * 1.0/len(test_X))
 
 
 if __name__ == '__main__':
@@ -479,6 +538,7 @@ if __name__ == '__main__':
     #Initialize
     irises = []
     irisesTest = []
+
     for i in range(len(IrisData['sepal_length'])):
         irises.append(IrisNode(IrisData, i))
 
@@ -509,7 +569,7 @@ if __name__ == '__main__':
 
     write_to_file(Iris_Weighted_Prediction,Header,irisesTest)
 
-
+    sk_implementation(irises, irisesTest)
 
     #Income data
     rawIncome = readFile(incomeFile)
@@ -552,6 +612,9 @@ if __name__ == '__main__':
         testIncome[i].set_prediction(pred,prob)
 
     write_to_file(Income_Weighted_Prediction, Header, testIncome)
+
+    sk_implementation(income, testIncome, True)
+
 
     # 1: <=50K, 0: >50K get roc plot
     label = []
