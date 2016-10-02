@@ -4,6 +4,6 @@ The installation command is:
 >pip install numpy
 
 Then you can kick off the script by running
->python Project2.py K
+>python Project2_xie.299_he.922.py K
 
 K is a optional argument, if you don't specify K the default value will be 3
