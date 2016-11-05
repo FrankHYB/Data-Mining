@@ -6,6 +6,9 @@ import numpy as np
 
 num_clusters_easy = 2;
 num_clusters_hard = 4;
+initial_centroid_easy = []
+initial_centroid_hard = []
+initial_centroid_wine = []
 
 class TwoDimNode:
 
@@ -14,6 +17,7 @@ class TwoDimNode:
         self.x1 = data['X.1'][i]
         self.x2 = data['X.2'][i]
         self.actual_cluster = data['cluster'][i]
+        self.prob = 0
 
     def eulid(self, other):
         x = [self.x1, self.x2]
@@ -40,6 +44,7 @@ class WineNode:
         self.alcohol = data['alcohol'][i]
         self.quality = data['quality'][i]
         self.cla = data['class'][i]
+        self.prob = 0
 
     def eulid(self, other):
         x = [self.fx_acidity, self.vol_acidity, self.citric_acid, self.resid_sugar, self.chlorides, self.free_sulf_d /
@@ -82,6 +87,30 @@ def write_to_file(filename, header,  nodes):
 
     accuracy = float(correct)/len(nodes)
     print "Accuracy for " + filename + ' ' + str(accuracy) + '\n'
+
+#Read data files
+def readFile(filename):
+    with open(filename, 'rb') as csvfile:
+        reader = csv.DictReader(csvfile)
+        data = {}
+        for row in reader:
+            for header, value in row.items():
+                try:
+                    data[header].append(value)
+                except KeyError:
+                    data[header] = [value]
+
+    return data
+
+def initial_centroid(data, opt):
+    if opt == 1:
+
+
+    elif opt == 2:
+
+
+    else:
+
 
 
 
