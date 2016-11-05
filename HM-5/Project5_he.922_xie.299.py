@@ -106,6 +106,7 @@ def readFile(filename):
     return data
 
 def initial_centroid(data, opt, k, nodes):
+    listOfCentroid = [];
 
     if opt == 1:
 
@@ -117,7 +118,7 @@ def initial_centroid(data, opt, k, nodes):
 
 
     else:
-
+    return listOfCentroid
 
 
 
