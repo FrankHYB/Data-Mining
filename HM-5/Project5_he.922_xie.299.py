@@ -107,17 +107,23 @@ def readFile(filename):
 
 def initial_centroid(data, opt, k, nodes):
     listOfCentroid = [];
-
     if opt == 1:
+        length = len(data.values()[0])
+        for i in range(k):
+            radIndex = random.randint(0, length-1)
+            #If a duplicate index is generated, random another index
+            while nodes[radIndex] in listOfCentroid:
+                radIndex = random.randint(0, length - 1)
+
+            listOfCentroid.append(nodes[radIndex])
+
+    #elif opt == 2:
 
 
-    elif opt == 2:
+    #elif opt == 3:
 
 
-    elif opt == 3:
-
-
-    else:
+    #else:
     return listOfCentroid
 
 
