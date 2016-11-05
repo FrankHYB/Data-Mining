@@ -192,16 +192,14 @@ def initial_centroid(data, opt, k, nodes):
     return listOfCentroid
 
 
-def compute_sse(nodes, dict_centroid):
-    num_of_cluster = len(dict_centroid)
+def compute_sse(nodes, num_of_cluster):
     sse = []
     for i in range(num_of_cluster):
         every_sse = 0
-        centroid = dict_centroid[i+1] # map cluster number -> centroid
         for node in nodes:
-            if node.actual_cluster != i+1:
+            if node.predict != i+1:
                 continue
-            every_sse += math.pow(node.eulid(centroid), 2)
+            every_sse += math.pow(node.eulid(node.centroid), 2)
         sse.append(every_sse)
     return sum(sse), sse
 
