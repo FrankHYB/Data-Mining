@@ -9,6 +9,9 @@ num_clusters_hard = 4;
 initial_centroid_easy = []
 initial_centroid_hard = []
 initial_centroid_wine = []
+two_dim_easy = 'TwoDimEasy.csv'
+two_dim_hard = 'TwoDimHard.csv'
+wine = 'wine.csv'
 
 class TwoDimNode:
 
@@ -102,7 +105,8 @@ def readFile(filename):
 
     return data
 
-def initial_centroid(data, opt, k):
+def initial_centroid(data, opt, k, nodes):
+
     if opt == 1:
 
 
@@ -118,3 +122,28 @@ def initial_centroid(data, opt, k):
 
 
 
+if __name__ == '__main__':
+    K = 0
+    if len(sys.argv) == 2:
+        K = int(sys.argv[1])
+    data_easy = readFile(two_dim_easy)
+    data_hard = readFile(two_dim_hard)
+    data_wine = readFile(wine)
+    for key, value in data_easy.items():
+        data_easy[key] = min_max_normalize(value)
+    for key, value in data_hard.items():
+        data_hard[key] = min_max_normalize(value)
+    for key, value in data_wine.items():
+        data_wine[key] = min_max_normalize(value)
+
+    easy_nodes = []
+    hard_nodes = []
+    wine_nodes = []
+    for i in range(len(data_easy['ID'])):
+        easy_nodes.append(TwoDimNode(data_easy, i, K))
+
+    for i in range(len(data_hard['ID'])):
+        hard_nodes.append(TwoDimNode(data_hard, i, K))
+
+    for i in range(len(data_wine['ID'])):
+        wine_nodes.append(WineNode(data_wine, i, K))
