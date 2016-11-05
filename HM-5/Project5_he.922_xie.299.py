@@ -52,5 +52,36 @@ class WineNode:
 
 
 
+#Min_max normalization
+def min_max_normalize(data):
+    data = map(float,data)
+    minV = min(data)
+    maxV = max(data)
+
+    for i in range(len(data)):
+        data[i] = ((data[i] - minV)/(maxV - minV))
+
+    return data
+
+
+#Generate output file
+def write_to_file(filename, header,  nodes):
+    accuracy = 0.0
+    correct = 0
+    table = []
+    with open(filename, 'w') as f:
+        f.write(header)
+        count = 1
+        for node in nodes:
+            f.write(str(count) + ',' + node.clas + ',' + node.prediction + ',' + str(node.posterior))
+            f.write('\n')
+            count += 1
+            table.append((node.clas,node.prediction))
+            if node.clas == node.prediction:
+                correct += 1
+
+    accuracy = float(correct)/len(nodes)
+    print "Accuracy for " + filename + ' ' + str(accuracy) + '\n'
+
 
 
