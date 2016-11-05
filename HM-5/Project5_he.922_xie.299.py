@@ -102,14 +102,18 @@ def readFile(filename):
 
     return data
 
-def initial_centroid(data, opt):
+def initial_centroid(data, opt, k):
     if opt == 1:
 
 
     elif opt == 2:
 
 
+    elif opt == 3:
+
+
     else:
+
 
 
 
