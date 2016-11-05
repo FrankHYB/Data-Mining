@@ -151,6 +151,7 @@ def initial_centroid(data, opt, k, nodes):
                 ele.prob = math.pow(dist, 2)
             weight = [element.prob for element in nodes]
             arr = np.random.choice(len(nodes), 1, weight)
+            #Return a list of nodes
             listOfCentroid.append(nodes[arr[0]])
 
 
