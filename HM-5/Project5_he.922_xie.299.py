@@ -1,6 +1,7 @@
 import csv
 import sys
 import math
+import random
 import operator
 import numpy as np
 
@@ -15,7 +16,7 @@ wine = 'wine.csv'
 
 class TwoDimNode:
 
-    def __init__(self, data, i, k):
+    def __init__(self, data, i):
         self.id = data['ID'][i]
         self.x1 = data['X.1'][i]
         self.x2 = data['X.2'][i]
@@ -120,7 +121,25 @@ def initial_centroid(data, opt, k, nodes):
     #elif opt == 2:
 
 
-    #elif opt == 3:
+    elif opt == 3:
+         centroid = nodes[random.randint(0, len(nodes) -1)]
+         centroid.prob = 0
+         listOfCentroid.append(centroid)
+         for i in range(k-1):
+            for ele in nodes:
+                if ele in listOfCentroid:
+                    continue
+                dist = sys.maxint
+                for c in listOfCentroid:
+                    temp = ele.eulid(c)
+                    if temp < dist:
+                        dist = temp
+                ele.prob = math.pow(dist, 2)
+            weight = [element.prob for element in nodes]
+            arr = np.random.choice(len(nodes), 1 , weight)
+            listOfCentroid.append(nodes[arr[0]])
+
+
 
 
     #else:
@@ -137,20 +156,26 @@ if __name__ == '__main__':
     data_hard = readFile(two_dim_hard)
     data_wine = readFile(wine)
     for key, value in data_easy.items():
+        if key == 'cluster':
+            continue
         data_easy[key] = min_max_normalize(value)
     for key, value in data_hard.items():
+        if key == 'cluster':
+            continue
         data_hard[key] = min_max_normalize(value)
     for key, value in data_wine.items():
+        if key == 'class':
+            continue
         data_wine[key] = min_max_normalize(value)
 
     easy_nodes = []
     hard_nodes = []
     wine_nodes = []
     for i in range(len(data_easy['ID'])):
-        easy_nodes.append(TwoDimNode(data_easy, i, K))
+        easy_nodes.append(TwoDimNode(data_easy, i))
 
     for i in range(len(data_hard['ID'])):
-        hard_nodes.append(TwoDimNode(data_hard, i, K))
+        hard_nodes.append(TwoDimNode(data_hard, i))
 
     for i in range(len(data_wine['ID'])):
-        wine_nodes.append(WineNode(data_wine, i, K))
+        wine_nodes.append(WineNode(data_wine, i))
