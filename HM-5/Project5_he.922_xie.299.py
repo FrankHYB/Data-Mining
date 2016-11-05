@@ -1,9 +1,9 @@
 import csv
 import sys
 import math
-import random
 import operator
 import numpy as np
+import random
 
 num_clusters_easy = 2;
 num_clusters_hard = 4;
@@ -46,7 +46,6 @@ class WineNode:
         self.pH = data['pH'][i]
         self.sulph = data['sulph'][i]
         self.alcohol = data['alcohol'][i]
-        self.quality = data['quality'][i]
         self.cla = data['class'][i]
         self.prob = 0
 
@@ -108,6 +107,7 @@ def readFile(filename):
 
 def initial_centroid(data, opt, k, nodes):
     listOfCentroid = [];
+
     if opt == 1:
         length = len(data.values()[0])
         for i in range(k):
@@ -115,17 +115,31 @@ def initial_centroid(data, opt, k, nodes):
             #If a duplicate index is generated, random another index
             while nodes[radIndex] in listOfCentroid:
                 radIndex = random.randint(0, length - 1)
-
+            #return a list of nodes
             listOfCentroid.append(nodes[radIndex])
 
-    #elif opt == 2:
+    elif opt == 2:
+        #Find k centroids
+        for i in range(k):
+            points = []
+            #Random a number for each attribute
+            for key, value in data.items():
+                if key != 'ID' and key != 'class' and key !='cluster':
+                    #find the max and min values in a column.
+                    minV = min(value)
+                    maxV = max(value)
+                    rad = random.uniform(minV,maxV)
+                    points.append(rad)
+            #return a list of points(num)
+            listOfCentroid.append(points)
+
 
 
     elif opt == 3:
-         centroid = nodes[random.randint(0, len(nodes) -1)]
-         centroid.prob = 0
-         listOfCentroid.append(centroid)
-         for i in range(k-1):
+        centroid = nodes[random.randint(0, len(nodes) - 1)]
+        centroid.prob = 0
+        listOfCentroid.append(centroid)
+        for i in range(k - 1):
             for ele in nodes:
                 if ele in listOfCentroid:
                     continue
@@ -136,10 +150,8 @@ def initial_centroid(data, opt, k, nodes):
                         dist = temp
                 ele.prob = math.pow(dist, 2)
             weight = [element.prob for element in nodes]
-            arr = np.random.choice(len(nodes), 1 , weight)
+            arr = np.random.choice(len(nodes), 1, weight)
             listOfCentroid.append(nodes[arr[0]])
-
-
 
 
     #else:
@@ -148,23 +160,27 @@ def initial_centroid(data, opt, k, nodes):
 
 
 
+
 if __name__ == '__main__':
-    K = 0
+    K = 2
     if len(sys.argv) == 2:
         K = int(sys.argv[1])
     data_easy = readFile(two_dim_easy)
     data_hard = readFile(two_dim_hard)
     data_wine = readFile(wine)
+    data_wine.pop('quality')
     for key, value in data_easy.items():
-        if key == 'cluster':
+        if key == 'cluster' or key == 'ID':
             continue
         data_easy[key] = min_max_normalize(value)
+
     for key, value in data_hard.items():
-        if key == 'cluster':
+        if key == 'cluster'or key == 'ID':
             continue
         data_hard[key] = min_max_normalize(value)
+
     for key, value in data_wine.items():
-        if key == 'class':
+        if key == 'class'or key == 'ID':
             continue
         data_wine[key] = min_max_normalize(value)
 
@@ -179,3 +195,5 @@ if __name__ == '__main__':
 
     for i in range(len(data_wine['ID'])):
         wine_nodes.append(WineNode(data_wine, i))
+
+    initial_centroid_easy = initial_centroid(data_easy, 2, K, easy_nodes)
