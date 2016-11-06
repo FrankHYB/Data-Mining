@@ -26,6 +26,7 @@ class TwoDimNode:
         self.actual_cluster = data['cluster'][i]
         self.prob = 0
         self.predict = 0
+        self.centroid = None
 
     def eulid(self, other):
         x = [self.x1, self.x2]
@@ -60,6 +61,8 @@ class WineNode:
         self.actual_cluster = data['class'][i]
         self.prob = 0
         self.predict = 0
+        self.centroid = None
+
 
     def eulid(self, other):
         x = [self.fx_acidity, self.vol_acidity, self.citric_acid, self.resid_sugar, self.chlorides, self.free_sulf_d,
@@ -301,8 +304,21 @@ def construct_centroid(points):
     return centroid
 
 
-def major_vote(cluster,nodes):
-    return 0
+def predict_cluster(cluster,nodes,k):
+    for i in range(k):
+        counter = {}
+
+        for node in cluster[i]:
+            if node.actual_cluster in counter:
+                counter[node.actual_cluster] = counter[node.actual_cluster] + 1
+            else:
+                counter.update({node.actual_cluster:1})
+
+        max_key = max(counter, key=lambda k: counter[k])
+        for node in cluster[i]:
+            node.predict = max_key
+            print node.predict
+
 
 
 
@@ -365,19 +381,22 @@ if __name__ == '__main__':
     #      2. randomly select a number between min and max of each attribute, and form initial centroid
     #      3.
     initial_centroid_easy = initial_centroid(data_easy, 1, K, easy_nodes)
-    k_means(easy_nodes,K,initial_centroid_easy,cluster_easy) #0: TWODIM_EASY
+    k_means(easy_nodes,K,initial_centroid_easy,cluster_easy)
+    predict_cluster(cluster_easy,easy_nodes,K)
+
     overall_SSE_easy, easy_sse = compute_sse(easy_nodes, K)
     print overall_SSE_easy
     print easy_sse
 
+
     initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
-    k_means(hard_nodes,K,initial_centroid_hard,cluster_hard) #1: TWODIM_HARD
+    k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, K)
     print overall_SSE_hard
     print hard_sse
 
     initial_centroid_wine = initial_centroid(data_wine, 1, K, wine_nodes)
-    k_means(wine_nodes,K,initial_centroid_wine,cluster_wine) #2:WINE
+    k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
     overall_SSE_wine, wine_sse = compute_sse(wine_nodes, K)
     print overall_SSE_wine
     print wine_sse
