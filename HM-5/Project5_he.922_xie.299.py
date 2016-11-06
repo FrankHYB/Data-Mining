@@ -58,15 +58,10 @@ class WineNode:
         self.pH = data['pH'][i]
         self.sulph = data['sulph'][i]
         self.alcohol = data['alcohol'][i]
-        if data['class'][i] == 'Low':
-            self.actual_cluster = 1
-        else:
-            self.actual_cluster = 2
+        self.actual_cluster = data['class'][i]
         self.prob = 0
         self.predict = 0
         self.centroid = None
-
-
     def eulid(self, other):
         x = [self.fx_acidity, self.vol_acidity, self.citric_acid, self.resid_sugar, self.chlorides, self.free_sulf_d,
              self.tot_sulf_d, self.density, self.pH, self.sulph, self.alcohol]
@@ -231,7 +226,7 @@ def point_avg(nodes,one_centroid, file_cluster):
                 cluster.append(n)
 
         #Average
-        length = len(nodes)
+        length = len(cluster)
         new_cen = [sum(sum_fx)/length,sum(sum_vol)/length,sum(sum_cit)/length,sum(sum_res)/length,sum(sum_chl)/length,
                 sum(sum_free)/length,sum(sum_tot)/length,sum(sum_den)/length,sum(sum_ph)/length,sum(sum_sul)/length,
                    sum(sum_alc)/length]
@@ -316,10 +311,12 @@ def predict_cluster(cluster,nodes,k):
                 counter[node.actual_cluster] = counter[node.actual_cluster] + 1
             else:
                 counter.update({node.actual_cluster:1})
-        print counter
+
         max_key = max(counter, key=lambda k: counter[k])
         for node in cluster[i]:
             node.predict = max_key
+            print node.predict
+
 
 
 
@@ -424,12 +421,20 @@ if __name__ == '__main__':
             continue
         data_hard[key] = min_max_normalize(value)
 
-
     for key, value in data_wine.items():
-        if key == 'class'or key == 'ID':
+        if key == 'ID':
             continue
-        data_wine[key] = min_max_normalize(value)
-
+        if key == 'class':
+            new_c = []
+            # transform to integer value
+            for ele in value:
+                if ele == 'Low':
+                    new_c.append(1)
+                else:
+                    new_c.append(2)
+            data_wine[key] = new_c
+        else:
+            data_wine[key] = min_max_normalize(value)
 
     #Create nodes
     easy_nodes = []
@@ -459,7 +464,7 @@ if __name__ == '__main__':
     #confusion_matrix(easy_nodes,cluster_easy)
 
 
-    initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
+    initial_centroid_hard = initial_centroid(data_hard, 3, K, hard_nodes)
     k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, initial_centroid_hard)
     print overall_SSE_hard
@@ -467,12 +472,10 @@ if __name__ == '__main__':
 
     initial_centroid_wine = initial_centroid(data_wine, 3, K, wine_nodes)
     k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
-    predict_cluster(cluster_wine,wine_nodes,K)
-
     overall_SSE_wine, wine_sse = compute_sse(wine_nodes, initial_centroid_wine)
     print overall_SSE_wine
     print wine_sse
     print 'Confusion Matrix'
-    confusion_matrix(wine_nodes,cluster_wine)
+    #confusion_matrix(wine_nodes,cluster_wine)
 
 
