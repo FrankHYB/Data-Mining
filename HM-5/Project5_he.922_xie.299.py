@@ -321,19 +321,59 @@ def predict_cluster(cluster,nodes,k):
 
 
 #Calculate SSE
-def compute_sse(nodes, num_of_cluster):
+def compute_sse(nodes, centroids):
     sse = []
-    for i in range(num_of_cluster):
+    for i in range(len(centroids)):
         every_sse = 0
         for node in nodes:
-            if node.predict != i+1:
+            if node.centroid != centroids[i]:
                 continue
             every_sse += math.pow(node.eulid(node.centroid), 2)
         sse.append(every_sse)
     return sum(sse), sse
 
-
-
+def compute_ssb(nodes, cluster):
+    ssb = 0
+    if type(nodes[0]) is TwoDimNode:
+        sum_x1 = []
+        sum_x2 = []
+        for node in nodes:
+            sum_x1.append(node.x1)
+            sum_x2.append(node.x2)
+        points = [sum(sum_x1) / len(sum_x1), sum(sum_x2) / len(sum_x2)]
+        overall_centre = construct_centroid(points)
+        for c in cluster:
+            ssb += len(c) * math.pow(overall_centre.eulid(c[0].centroid), 2)
+    else:
+        sum_fx =[]
+        sum_vol = []
+        sum_cit =[]
+        sum_res =[]
+        sum_chl =[]
+        sum_free =[]
+        sum_tot =[]
+        sum_den =[]
+        sum_ph =[]
+        sum_sul =[]
+        sum_alc =[]
+        for n in nodes:
+            sum_fx.append(n.fx_acidity)
+            sum_vol.append(n.vol_acidity)
+            sum_cit.append(n.citric_acid)
+            sum_res.append(n.resid_sugar)
+            sum_chl.append(n.chlorides)
+            sum_free.append(n.free_sulf_d)
+            sum_tot.append(n.tot_sulf_d)
+            sum_den.append(n.density)
+            sum_ph.append((n.pH))
+            sum_sul.append(n.sulph)
+            sum_alc.append(n.alcohol)
+        points = [sum(sum_fx) / len(sum_fx), sum(sum_vol)/ len(sum_vol), sum(sum_cit)/len(sum_cit), sum(sum_res) / len(sum_res),
+                  sum(sum_chl) / len(sum_chl), sum(sum_free) / len(sum_free), sum(sum_tot) / len(sum_tot), sum(sum_den)/ len(sum_den),
+                  sum(sum_ph)/len(sum_ph), sum(sum_sul) / len(sum_sul), sum(sum_alc)/len(sum_alc)]
+        overall_centre = construct_centroid(points)
+        for c in cluster:
+            ssb += len(c) * math.pow(overall_centre.eulid(c[0].centroid),2)
 if __name__ == '__main__':
     K = 2
     if len(sys.argv) == 2:
@@ -391,21 +431,22 @@ if __name__ == '__main__':
     k_means(easy_nodes,K,initial_centroid_easy,cluster_easy)
     predict_cluster(cluster_easy,easy_nodes,K)
 
-    overall_SSE_easy, easy_sse = compute_sse(easy_nodes, K)
+    overall_SSE_easy, easy_sse = compute_sse(easy_nodes, initial_centroid_easy)
     print overall_SSE_easy
     print easy_sse
 
 
     initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
     k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
-    overall_SSE_hard, hard_sse = compute_sse(hard_nodes, K)
+    overall_SSE_hard, hard_sse = compute_sse(hard_nodes, initial_centroid_hard)
     print overall_SSE_hard
     print hard_sse
 
     initial_centroid_wine = initial_centroid(data_wine, 1, K, wine_nodes)
     k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
-    overall_SSE_wine, wine_sse = compute_sse(wine_nodes, K)
+    overall_SSE_wine, wine_sse = compute_sse(wine_nodes, initial_centroid_wine)
     print overall_SSE_wine
     print wine_sse
     print len(cluster_easy)
+
 
