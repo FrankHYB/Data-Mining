@@ -182,7 +182,7 @@ def initial_centroid(data, opt, k, nodes):
 
 
 #Calculate new centroid
-def point_avg(nodes,one_centroid):
+def point_avg(nodes,one_centroid, file_cluster):
     cluster = []
     if(len(nodes) < 500):
         #Calculate the sum for each attribute
@@ -230,12 +230,7 @@ def point_avg(nodes,one_centroid):
                 sum(sum_free)/length,sum(sum_tot)/length,sum(sum_den)/length,sum(sum_ph)/length,sum(sum_sul)/length,
                    sum(sum_alc)/length]
 
-    if (len(nodes) < 400):
-        cluster_easy.append(cluster)
-    elif len(nodes) < 1000:
-        cluster_hard.append(cluster)
-    else:
-        cluster_wine.append(cluster)
+    file_cluster.append(cluster)
     return new_cen
 
 #Compare whether or not a list of cendroids are the same
@@ -248,7 +243,7 @@ def compare_list_of_centroid(old, new):
 
 
 #K means algorithm
-def k_means(nodes,k,ini_centroid,file_opt):
+def k_means(nodes,k,ini_centroid,cluster):
 
     cnt = 0
     while True:
@@ -264,19 +259,13 @@ def k_means(nodes,k,ini_centroid,file_opt):
         #Update centroid
         new_centroid= []
         for i in range(k):
-            one_centroid_num = point_avg(nodes,ini_centroid[i])
+            one_centroid_num = point_avg(nodes,ini_centroid[i],cluster)
             new_centroid.append(construct_centroid(one_centroid_num))
 
         if compare_list_of_centroid(ini_centroid,new_centroid):
-            if file_opt == 0:
-                for i in range(len(cluster_easy)-k):
-                    del cluster_easy[0]
-            elif file_opt == 1:
-                for i in range(len(cluster_hard)-k):
-                    del cluster_hard[0]
-            else:
-                for i in range(len(cluster_wine) -k):
-                    del cluster_wine[0]
+            for i in range(len(cluster)-k):
+                del cluster[0]
+
             break
         else:
             for i in range(len(ini_centroid)):
@@ -310,6 +299,11 @@ def construct_centroid(points):
         new_dict.update({'class':[1]})
         centroid = WineNode(new_dict,0)
     return centroid
+
+
+def major_vote(cluster,nodes):
+    return 0
+
 
 
 #Calculate SSE
@@ -371,21 +365,21 @@ if __name__ == '__main__':
     #      2. randomly select a number between min and max of each attribute, and form initial centroid
     #      3.
     initial_centroid_easy = initial_centroid(data_easy, 1, K, easy_nodes)
-    k_means(easy_nodes,K,initial_centroid_easy,0)
+    k_means(easy_nodes,K,initial_centroid_easy,cluster_easy) #0: TWODIM_EASY
     overall_SSE_easy, easy_sse = compute_sse(easy_nodes, K)
     print overall_SSE_easy
     print easy_sse
 
     initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
-    k_means(hard_nodes,K,initial_centroid_hard,1)
+    k_means(hard_nodes,K,initial_centroid_hard,cluster_hard) #1: TWODIM_HARD
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, K)
     print overall_SSE_hard
     print hard_sse
 
     initial_centroid_wine = initial_centroid(data_wine, 1, K, wine_nodes)
-    k_means(wine_nodes,K,initial_centroid_wine,2)
+    k_means(wine_nodes,K,initial_centroid_wine,cluster_wine) #2:WINE
     overall_SSE_wine, wine_sse = compute_sse(wine_nodes, K)
     print overall_SSE_wine
     print wine_sse
-    print len(cluster_wine)
+    print len(cluster_easy)
 
