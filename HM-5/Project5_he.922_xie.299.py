@@ -58,10 +58,15 @@ class WineNode:
         self.pH = data['pH'][i]
         self.sulph = data['sulph'][i]
         self.alcohol = data['alcohol'][i]
-        self.actual_cluster = data['class'][i]
+        if data['class'][i] == 'Low':
+            self.actual_cluster = '1'
+        else:
+            self.actual_cluster = '2'
         self.prob = 0
         self.predict = 0
         self.centroid = None
+
+
     def eulid(self, other):
         x = [self.fx_acidity, self.vol_acidity, self.citric_acid, self.resid_sugar, self.chlorides, self.free_sulf_d,
              self.tot_sulf_d, self.density, self.pH, self.sulph, self.alcohol]
@@ -311,12 +316,9 @@ def predict_cluster(cluster,nodes,k):
                 counter[node.actual_cluster] = counter[node.actual_cluster] + 1
             else:
                 counter.update({node.actual_cluster:1})
-
         max_key = max(counter, key=lambda k: counter[k])
         for node in cluster[i]:
             node.predict = max_key
-            print node.predict
-
 
 
 
@@ -383,7 +385,6 @@ def confusion_matrix(nodes,cluster):
     for i in range(len(cluster)):
 
         for node in cluster[i]:
-            print str(node.actual_cluster) +' '+ str(node.predict)
             if(node.actual_cluster == '1' and node.predict == '1'):
                 truepos.append(node)
             elif(node.actual_cluster == '1' and node.predict == '2'):
@@ -421,20 +422,12 @@ if __name__ == '__main__':
             continue
         data_hard[key] = min_max_normalize(value)
 
+
     for key, value in data_wine.items():
-        if key == 'ID':
+        if key == 'class'or key == 'ID':
             continue
-        if key == 'class':
-            new_c = []
-            # transform to integer value
-            for ele in value:
-                if ele == 'Low':
-                    new_c.append(1)
-                else:
-                    new_c.append(2)
-            data_wine[key] = new_c
-        else:
-            data_wine[key] = min_max_normalize(value)
+        data_wine[key] = min_max_normalize(value)
+
 
     #Create nodes
     easy_nodes = []
@@ -453,29 +446,39 @@ if __name__ == '__main__':
     #Note: 1: randomly select data points as initial centroids,
     #      2. randomly select a number between min and max of each attribute, and form initial centroid
     #      3.
+
+    #TWODIM_EASY
     initial_centroid_easy = initial_centroid(data_easy, 3, K, easy_nodes)
     k_means(easy_nodes,K,initial_centroid_easy,cluster_easy)
     predict_cluster(cluster_easy,easy_nodes,K)
 
     overall_SSE_easy, easy_sse = compute_sse(easy_nodes, initial_centroid_easy)
-    print overall_SSE_easy
+    print 'overall_SSE_easy = ' + str(overall_SSE_easy)
     print easy_sse
     print 'Confusion Matrix'
-    #confusion_matrix(easy_nodes,cluster_easy)
+    confusion_matrix(easy_nodes,cluster_easy)
 
 
-    initial_centroid_hard = initial_centroid(data_hard, 3, K, hard_nodes)
+    #TWODIM_HARD
+    initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
     k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, initial_centroid_hard)
-    print overall_SSE_hard
+    print '\noverall_SSE_hard =' + str(overall_SSE_hard)
     print hard_sse
+    print 'Confusion Matrix'
+    confusion_matrix(hard_nodes,cluster_hard)
 
-    initial_centroid_wine = initial_centroid(data_wine, 3, K, wine_nodes)
+
+    #WINE
+    initial_centroid_wine = initial_centroid(data_wine, 1, K, wine_nodes)
     k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
+    predict_cluster(cluster_wine,wine_nodes,K)
+
     overall_SSE_wine, wine_sse = compute_sse(wine_nodes, initial_centroid_wine)
-    print overall_SSE_wine
+    print '\noverall_SSE_wine = ' + str(overall_SSE_wine)
+    print 'SSE = '
     print wine_sse
     print 'Confusion Matrix'
-    #confusion_matrix(wine_nodes,cluster_wine)
+    confusion_matrix(wine_nodes,cluster_wine)
 
 
