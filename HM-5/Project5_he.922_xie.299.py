@@ -394,10 +394,23 @@ def confusion_matrix(nodes,cluster):
             elif(node.actual_cluster == '2' and node.predict == '2'):
                 trueneg.append(node)
 
-    print len(truepos)
-    print len(trueneg)
-    print len(falsepos)
-    print len(falseneg)
+    print 'tp = ' + str(len(truepos))
+    print 'tn = ' + str(len(trueneg))
+    print 'fp = ' + str(len(falsepos))
+    print 'fn = ' + str(len(falseneg))
+
+
+def confusion_matrix_hard(nodes,cluster):
+    mat = {}
+    for i in range(len(cluster)):
+        for node in cluster[i]:
+            pair = repr([node.actual_cluster,node.predict])
+            if mat.has_key(pair):
+                mat[pair] = mat[pair] + 1
+            else:
+                mat.update({pair:1})
+
+    print mat
 
 
 if __name__ == '__main__':
@@ -463,10 +476,11 @@ if __name__ == '__main__':
     initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
     k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, initial_centroid_hard)
+    predict_cluster(cluster_hard,hard_nodes,K)
     print '\noverall_SSE_hard =' + str(overall_SSE_hard)
     print hard_sse
     print 'Confusion Matrix'
-    confusion_matrix(hard_nodes,cluster_hard)
+    confusion_matrix_hard(hard_nodes,cluster_hard)
 
 
     #WINE
