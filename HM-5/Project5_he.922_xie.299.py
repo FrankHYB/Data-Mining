@@ -27,6 +27,7 @@ class TwoDimNode:
         self.prob = 0
         self.predict = 0
         self.centroid = None
+        self.sc = 0
 
     def eulid(self, other):
         x = [self.x1, self.x2]
@@ -58,15 +59,11 @@ class WineNode:
         self.pH = data['pH'][i]
         self.sulph = data['sulph'][i]
         self.alcohol = data['alcohol'][i]
-        if data['class'][i] == 'Low':
-            self.actual_cluster = '1'
-        else:
-            self.actual_cluster = '2'
+        self.actual_cluster = data['class'][i]
         self.prob = 0
         self.predict = 0
         self.centroid = None
-
-
+        self.sc = 0
     def eulid(self, other):
         x = [self.fx_acidity, self.vol_acidity, self.citric_acid, self.resid_sugar, self.chlorides, self.free_sulf_d,
              self.tot_sulf_d, self.density, self.pH, self.sulph, self.alcohol]
@@ -336,7 +333,7 @@ def compute_sse(nodes, centroids):
 
 def compute_ssb(nodes, cluster):
     ssb = 0
-    if type(nodes[0]) is TwoDimNode:
+    if isinstance(nodes[0], TwoDimNode):
         sum_x1 = []
         sum_x2 = []
         for node in nodes:
@@ -376,6 +373,7 @@ def compute_ssb(nodes, cluster):
         overall_centre = construct_centroid(points)
         for c in cluster:
             ssb += len(c) * math.pow(overall_centre.eulid(c[0].centroid), 2)
+    return ssb
 
 def confusion_matrix(nodes,cluster):
     truepos = []
@@ -412,6 +410,37 @@ def confusion_matrix_hard(nodes,cluster):
 
     print mat
 
+def compute_slicoef(nodes, clusters):
+
+    for cluster in clusters:
+        for node in cluster:
+            sc_a = 0
+            min_scb = sys.float_info.max
+            #compute a
+            for other in cluster:
+                sc_a += node.eulid(other)
+            #compute b
+            for other_cluster in clusters:
+                sc_b = 0
+                if cluster == other_cluster:
+                    continue
+                for n in other_cluster:
+                    sc_b += node.eulid(n)
+                if min_scb > sc_b / len(other_cluster):
+                    min_scb = sc_b / len(other_cluster)
+            avg_sca = sc_a / (len(cluster) - 1)
+            node.sc = (min_scb - avg_sca) / max(min_scb, avg_sca)
+    sli_clusters = []
+    overall_sli = 0
+    for i in range(len(clusters)):
+        sum_sli = 0
+        for node in clusters[i]:
+            sum_sli += node.sc
+        sli_clusters.append(sum_sli / len(clusters[i]))
+        overall_sli += sum_sli
+    return sli_clusters, overall_sli / len(nodes)
+
+
 
 if __name__ == '__main__':
     K = 2
@@ -435,11 +464,20 @@ if __name__ == '__main__':
             continue
         data_hard[key] = min_max_normalize(value)
 
-
     for key, value in data_wine.items():
-        if key == 'class'or key == 'ID':
+        if key == 'ID':
             continue
-        data_wine[key] = min_max_normalize(value)
+        if key == 'class':
+            new_c = []
+            # transform to integer value
+            for ele in value:
+                if ele == 'Low':
+                    new_c.append(1)
+                else:
+                    new_c.append(2)
+            data_wine[key] = new_c
+        else:
+            data_wine[key] = min_max_normalize(value)
 
 
     #Create nodes
@@ -466,33 +504,45 @@ if __name__ == '__main__':
     predict_cluster(cluster_easy,easy_nodes,K)
 
     overall_SSE_easy, easy_sse = compute_sse(easy_nodes, initial_centroid_easy)
-    print 'overall_SSE_easy = ' + str(overall_SSE_easy)
+    easy_ssb = compute_ssb(easy_nodes, cluster_easy)
+    print 'easy sse' + str(overall_SSE_easy)
     print easy_sse
+    print 'ssb: ' + str(easy_ssb)
     print 'Confusion Matrix'
-    confusion_matrix(easy_nodes,cluster_easy)
+    #confusion_matrix(easy_nodes,cluster_easy)
+    sli_cluster, overall = compute_slicoef(easy_nodes, cluster_easy)
+    print 'overall sli: ' + str(overall)
+    print sli_cluster
 
 
     #TWODIM_HARD
     initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
     k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, initial_centroid_hard)
+    hard_ssb = compute_ssb(hard_nodes, cluster_hard)
+    print 'ssb: '+ str(hard_ssb)
+    print 'hard sse: '+str(overall_SSE_hard)
     predict_cluster(cluster_hard,hard_nodes,K)
     print '\noverall_SSE_hard =' + str(overall_SSE_hard)
     print hard_sse
-    print 'Confusion Matrix'
-    confusion_matrix_hard(hard_nodes,cluster_hard)
-
+    sli_cluster, overall = compute_slicoef(hard_nodes, cluster_hard)
+    print 'overall sli: ' + str(overall)
+    print sli_cluster
 
     #WINE
     initial_centroid_wine = initial_centroid(data_wine, 1, K, wine_nodes)
     k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
-    predict_cluster(cluster_wine,wine_nodes,K)
-
     overall_SSE_wine, wine_sse = compute_sse(wine_nodes, initial_centroid_wine)
-    print '\noverall_SSE_wine = ' + str(overall_SSE_wine)
-    print 'SSE = '
+    wine_ssb = compute_ssb(wine_nodes, cluster_wine)
+    print 'wine sse: ' + str(overall_SSE_wine)
     print wine_sse
+    print 'ssb: ' + str(wine_ssb)
+
+    sli_cluster, overall = compute_slicoef(wine_nodes, cluster_wine)
+    print 'overall sli: ' + str(overall)
+    print sli_cluster
+
     print 'Confusion Matrix'
-    confusion_matrix(wine_nodes,cluster_wine)
+    #confusion_matrix(wine_nodes,cluster_wine)
 
 
