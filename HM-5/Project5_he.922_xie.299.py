@@ -62,8 +62,6 @@ class WineNode:
         self.prob = 0
         self.predict = 0
         self.centroid = None
-
-
     def eulid(self, other):
         x = [self.fx_acidity, self.vol_acidity, self.citric_acid, self.resid_sugar, self.chlorides, self.free_sulf_d,
              self.tot_sulf_d, self.density, self.pH, self.sulph, self.alcohol]
@@ -359,9 +357,18 @@ if __name__ == '__main__':
         data_hard[key] = min_max_normalize(value)
 
     for key, value in data_wine.items():
-        if key == 'class'or key == 'ID':
+        if key == 'ID':
             continue
-        data_wine[key] = min_max_normalize(value)
+        if key == 'class':
+            new_c = []
+            # transform to integer value
+            for ele in value:
+                if ele == 'Low':
+                    new_c.append(1)
+                else:
+                    new_c.append(2)
+        else:
+            data_wine[key] = min_max_normalize(value)
 
     #Create nodes
     easy_nodes = []
