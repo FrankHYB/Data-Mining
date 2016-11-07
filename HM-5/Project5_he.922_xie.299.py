@@ -150,7 +150,7 @@ def initial_centroid(data, opt, k, nodes):
                     rad = random.uniform(minV,maxV)
                     points.append(rad)
             #return a list of points(num)
-            listOfCentroid.append(points)
+            listOfCentroid.append(construct_centroid(points))
 
 
 
@@ -485,7 +485,7 @@ if __name__ == '__main__':
             for i in range(len(value)):
                 if value[i] < 0.58:
                     value[i] = 0.3
-                if value[i] > 0.74:
+                if value[i] >= 0.74:
                     value[i] = 0.95
 
 
@@ -493,14 +493,14 @@ if __name__ == '__main__':
             for i in range(len(value)):
                 if value[i] <= 9.9:
                     value[i] = 7
-                if value[i] > 10.6:
+                if value[i] > 10.5:
                     value[i] = 13
 
         if key == 'vol_acidity':
             for i in range(len(value)):
                 if value[i] <= 0.4:
                     value[i] = 0.2
-                if value[i] > 0.72:
+                if value[i] >= 0.72:
                     value[i] = 0.92
         data_wine[key] = min_max_normalize(value)
 
