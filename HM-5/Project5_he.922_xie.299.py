@@ -104,22 +104,11 @@ def min_max_normalize(data):
 
 #Generate output file
 def write_to_file(filename, header,  nodes):
-    accuracy = 0.0
-    correct = 0
-    table = []
     with open(filename, 'w') as f:
         f.write(header)
-        count = 1
         for node in nodes:
-            f.write(str(count) + ',' + node.clas + ',' + node.prediction + ',' + str(node.posterior))
+            f.write(str(node.id) + ',' + str(node.predict) + ',' + str(node.actual_cluster))
             f.write('\n')
-            count += 1
-            table.append((node.clas,node.prediction))
-            if node.clas == node.prediction:
-                correct += 1
-
-    accuracy = float(correct)/len(nodes)
-    print "Accuracy for " + filename + ' ' + str(accuracy) + '\n'
 
 #Read data files
 def readFile(filename):
@@ -280,7 +269,6 @@ def k_means(nodes,k,ini_centroid,cluster):
                 ini_centroid[i] = new_centroid[i]
 
         cnt = cnt + 1
-        #print cnt
 
 
 
@@ -452,10 +440,13 @@ def confusion_matrix_hard(nodes,cluster):
     print mat
 
 
+
 if __name__ == '__main__':
-    K = 2
     if len(sys.argv) == 2:
         K = int(sys.argv[1])
+    else:
+        print 'Please enter the number of clusters'
+        sys.exit(0)
 
     #Read all files
     data_easy = readFile(two_dim_easy)
@@ -490,7 +481,6 @@ if __name__ == '__main__':
                     value[i] = 1
                 else:
                     value[i] = 10
-            print data_wine['tot_sulf_d']
         if key =='sulph':
             for i in range(len(value)):
                 if value[i] < 0.58:
@@ -498,7 +488,6 @@ if __name__ == '__main__':
                 if value[i] > 0.74:
                     value[i] = 0.95
 
-            print data_wine['sulph']
 
         if key == 'alcohol':
             for i in range(len(value)):
@@ -506,7 +495,6 @@ if __name__ == '__main__':
                     value[i] = 7
                 if value[i] > 10.6:
                     value[i] = 13
-            print data_wine['alcohol']
 
         if key == 'vol_acidity':
             for i in range(len(value)):
@@ -514,7 +502,6 @@ if __name__ == '__main__':
                     value[i] = 0.2
                 if value[i] > 0.72:
                     value[i] = 0.92
-            print data_wine['vol_acidity']
         data_wine[key] = min_max_normalize(value)
 
 
@@ -588,5 +575,12 @@ if __name__ == '__main__':
     print sli_cluster
     print 'Confusion Matrix'
     confusion_matrix(wine_nodes,cluster_wine)
+    header = 'ID,predict_cluster,true_cluster\n'
+    filename_easy = 'TwoDimEasyOutput.csv'
+    filename_hard = 'TwoDimHardOutput.csv'
+    filename_wine = 'WineOutput.csv'
+    write_to_file(filename_easy,header,easy_nodes)
+    write_to_file(filename_hard,header,hard_nodes)
+    write_to_file(filename_wine,header,wine_nodes)
 
 
