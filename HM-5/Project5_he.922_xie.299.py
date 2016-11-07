@@ -55,6 +55,7 @@ class WineNode:
         self.chlorides = data['chlorides'][i]
         self.free_sulf_d = data['free_sulf_d'][i]
         self.tot_sulf_d = data['tot_sulf_d'][i]
+
         self.density = data['density'][i]
         self.pH = data['pH'][i]
         self.sulph = data['sulph'][i]
@@ -434,6 +435,8 @@ def confusion_matrix(nodes,cluster):
     print 'tn = ' + str(len(trueneg))
     print 'fp = ' + str(len(falsepos))
     print 'fn = ' + str(len(falseneg))
+    acc = 1.0 * (len(truepos)+len(trueneg))/(len(nodes))
+    print 'Accuracy = ' + str(acc)
 
 
 def confusion_matrix_hard(nodes,cluster):
@@ -450,7 +453,7 @@ def confusion_matrix_hard(nodes,cluster):
 
 
 if __name__ == '__main__':
-    K = 4
+    K = 2
     if len(sys.argv) == 2:
         K = int(sys.argv[1])
 
@@ -471,10 +474,47 @@ if __name__ == '__main__':
             continue
         data_hard[key] = min_max_normalize(value)
 
+    data_wine['tot_sulf_d'] = map(float,data_wine['tot_sulf_d'])
+    data_wine['sulph'] = map(float,data_wine['sulph'])
+    data_wine['alcohol'] = map(float,data_wine['alcohol'])
+    data_wine['vol_acidity'] = map(float,data_wine['vol_acidity'])
+
+
 
     for key, value in data_wine.items():
         if key == 'class'or key == 'ID':
             continue
+        if key =='tot_sulf_d':
+            for i in range(len(value)):
+                if value[i] < 95:
+                    value[i] = 1
+                else:
+                    value[i] = 10
+            print data_wine['tot_sulf_d']
+        if key =='sulph':
+            for i in range(len(value)):
+                if value[i] < 0.58:
+                    value[i] = 0.3
+                if value[i] > 0.74:
+                    value[i] = 0.95
+
+            print data_wine['sulph']
+
+        if key == 'alcohol':
+            for i in range(len(value)):
+                if value[i] <= 9.9:
+                    value[i] = 7
+                if value[i] > 10.6:
+                    value[i] = 13
+            print data_wine['alcohol']
+
+        if key == 'vol_acidity':
+            for i in range(len(value)):
+                if value[i] <= 0.4:
+                    value[i] = 0.2
+                if value[i] > 0.72:
+                    value[i] = 0.92
+            print data_wine['vol_acidity']
         data_wine[key] = min_max_normalize(value)
 
 
@@ -533,7 +573,7 @@ if __name__ == '__main__':
 
 
     #WINE
-    initial_centroid_wine = initial_centroid(data_wine, 1, K, wine_nodes)
+    initial_centroid_wine = initial_centroid(data_wine, 3, K, wine_nodes)
     k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
     predict_cluster(cluster_wine,wine_nodes,K)
 
