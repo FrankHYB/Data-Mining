@@ -16,6 +16,7 @@ cluster_wine = []
 two_dim_easy = 'TwoDimEasy.csv'
 two_dim_hard = 'TwoDimHard.csv'
 wine = 'wine.csv'
+exist_counter = 0
 
 class TwoDimNode:
 
@@ -55,7 +56,7 @@ class WineNode:
         self.chlorides = data['chlorides'][i]
         self.free_sulf_d = data['free_sulf_d'][i]
         self.tot_sulf_d = data['tot_sulf_d'][i]
-
+        self.quality = data['quality'][i]
         self.density = data['density'][i]
         self.pH = data['pH'][i]
         self.sulph = data['sulph'][i]
@@ -179,19 +180,23 @@ def initial_centroid(data, opt, k, nodes):
 
 
 #Calculate new centroid
-def point_avg(nodes,one_centroid, file_cluster):
+#return list of new centroid
+def point_avg(nodes,file_cluster,one_centroid = None, cluster_num = '0'):
     cluster = []
     if(len(nodes) < 500):
         #Calculate the sum for each attribute
         sum_x1 = []
         sum_x2 = []
         for n in nodes:
-            if n.centroid == one_centroid:
+            if n.centroid == one_centroid or n.actual_cluster == cluster_num:
                 sum_x1.append(n.x1)
                 sum_x2.append(n.x2)
                 cluster.append(n)
 
         #Average
+        if len(sum_x1) == 0 or len(sum_x2) == 0:
+            print 'randomly select a point with attributes with zero, please re-run'
+            sys.exit(0)
         new_cen = [sum(sum_x1)/len(sum_x1),sum(sum_x2)/len(sum_x2)]
     else:
         #Calculate the sum for each attribute
@@ -207,7 +212,7 @@ def point_avg(nodes,one_centroid, file_cluster):
         sum_sul =[]
         sum_alc =[]
         for n in nodes:
-            if n.centroid == one_centroid:
+            if n.centroid == one_centroid or n.actual_cluster == cluster_num:
                 sum_fx.append(n.fx_acidity)
                 sum_vol.append(n.vol_acidity)
                 sum_cit.append(n.citric_acid)
@@ -256,7 +261,7 @@ def k_means(nodes,k,ini_centroid,cluster):
         #Update centroid
         new_centroid= []
         for i in range(k):
-            one_centroid_num = point_avg(nodes,ini_centroid[i],cluster)
+            one_centroid_num = point_avg(nodes,cluster, ini_centroid[i])
             new_centroid.append(construct_centroid(one_centroid_num))
 
         if compare_list_of_centroid(ini_centroid,new_centroid):
@@ -293,12 +298,17 @@ def construct_centroid(points):
         new_dict.update({'sulph':[points[9]]})
         new_dict.update({'alcohol':[points[10]]})
         new_dict.update({'class':[1]})
+        new_dict.update({'quality': ['0']})
         centroid = WineNode(new_dict,0)
     return centroid
 
 
-def predict_cluster(cluster,nodes,k):
+def predict_cluster(cluster,nodes,k, actual):
     for i in range(k):
+        if i+1 > actual:
+            for node in cluster[i]:
+                node.predict = str(i+1)
+            continue
         counter = {}
 
         for node in cluster[i]:
@@ -441,6 +451,8 @@ def confusion_matrix_hard(nodes,cluster):
 
 
 
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         K = int(sys.argv[1])
@@ -452,16 +464,15 @@ if __name__ == '__main__':
     data_easy = readFile(two_dim_easy)
     data_hard = readFile(two_dim_hard)
     data_wine = readFile(wine)
-    data_wine.pop('quality')
 
     #Normalization
     for key, value in data_easy.items():
-        if key == 'cluster' or key == 'ID':
+        if key == 'cluster' or key == 'ID' or key == 'quality':
             continue
         data_easy[key] = min_max_normalize(value)
 
     for key, value in data_hard.items():
-        if key == 'cluster'or key == 'ID':
+        if key == 'cluster'or key == 'ID' or key == 'quality':
             continue
         data_hard[key] = min_max_normalize(value)
 
@@ -473,7 +484,7 @@ if __name__ == '__main__':
 
 
     for key, value in data_wine.items():
-        if key == 'class'or key == 'ID':
+        if key == 'class'or key == 'ID' or key == 'quality':
             continue
         if key =='tot_sulf_d':
             for i in range(len(value)):
@@ -524,9 +535,9 @@ if __name__ == '__main__':
     #      3.
 
     #TWODIM_EASY
-    initial_centroid_easy = initial_centroid(data_easy, 3, K, easy_nodes)
+    initial_centroid_easy = initial_centroid(data_easy, 1, K, easy_nodes)
     k_means(easy_nodes,K,initial_centroid_easy,cluster_easy)
-    predict_cluster(cluster_easy,easy_nodes,K)
+    predict_cluster(cluster_easy,easy_nodes,K,2)
 
     overall_SSE_easy, easy_sse = compute_sse(easy_nodes, initial_centroid_easy)
     easy_ssb = compute_ssb(easy_nodes, cluster_easy)
@@ -538,13 +549,13 @@ if __name__ == '__main__':
     print 'Overall silhouette width = ' + str(overall) + '\nSilhouette width for each cluster: '
     print sli_cluster
     print 'Confusion Matrix'
-    confusion_matrix(easy_nodes,cluster_easy)
+    confusion_matrix_hard(easy_nodes,cluster_easy)
 
 
     #TWODIM_HARD
     initial_centroid_hard = initial_centroid(data_hard, 1, K, hard_nodes)
     k_means(hard_nodes,K,initial_centroid_hard,cluster_hard)
-    predict_cluster(cluster_hard,hard_nodes,K)
+    predict_cluster(cluster_hard,hard_nodes,K,4)
 
     overall_SSE_hard, hard_sse = compute_sse(hard_nodes, initial_centroid_hard)
     hard_ssb = compute_ssb(hard_nodes, cluster_hard)
@@ -562,7 +573,7 @@ if __name__ == '__main__':
     #WINE
     initial_centroid_wine = initial_centroid(data_wine, 3, K, wine_nodes)
     k_means(wine_nodes,K,initial_centroid_wine,cluster_wine)
-    predict_cluster(cluster_wine,wine_nodes,K)
+    predict_cluster(cluster_wine,wine_nodes,K,2)
 
     overall_SSE_wine, wine_sse = compute_sse(wine_nodes, initial_centroid_wine)
     wine_ssb = compute_ssb(wine_nodes, cluster_wine)
@@ -570,7 +581,7 @@ if __name__ == '__main__':
 
     print '\nOverall_SSE_wine = ' + str(overall_SSE_wine) + '\nSSE for each cluster:'
     print wine_sse
-    print 'SSB: ' + str(wine_sse)
+    print 'SSB: ' + str(wine_ssb)
     print 'Overall silhouette width = ' + str(overall) + '\nSilhouette width for each cluster'
     print sli_cluster
     print 'Confusion Matrix'
@@ -582,5 +593,6 @@ if __name__ == '__main__':
     write_to_file(filename_easy,header,easy_nodes)
     write_to_file(filename_hard,header,hard_nodes)
     write_to_file(filename_wine,header,wine_nodes)
+
 
 
