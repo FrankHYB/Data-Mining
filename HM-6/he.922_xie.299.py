@@ -1,27 +1,28 @@
 import numpy as np
+from heapq import heappush, heappop
 from sklearn.datasets import fetch_olivetti_faces
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
-import sys
-import random
-import math
+from sklearn.decomposition import PCA
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report
+import operator
 
 
-def PCA(matrix, K ,num = 64):
+def pca(matrix, K, avgMatrix ,num = 64):
     #matrix = np.delete(matrix, np.arange(2048, 4096), 1)#currently 2048 for performance
     #cov_mat = np.cov([row for row in matrix.T])
-    avgMatrix = np.mean(matrix, 0)
     for i in range(matrix.shape[0]):
         matrix[i, :] = matrix[i, :] - avgMatrix
     eigen_val,eigen_vec = np.linalg.eig(matrix.T.dot(matrix))
-    eigen_pairs = [(eigen_val[i], eigen_vec[:, i]) for i in range(len(eigen_val))]
+    eigen_pairs = [(eigen_val[i], eigen_vec[:, i], i) for i in range(len(eigen_val))]
     eigen_pairs.sort(key=lambda x:x[0], reverse=True)
+    print eigen_vec.shape
     columns = []
     for i in range(num):
-         columns.append(eigen_pairs[i][1].reshape(K, 1))
-    matrix_w = np.hstack(tuple(columns))
-
+        columns.append(eigen_pairs[i][1].reshape(K, 1))
+    matrix_w = np.hstack(tuple(columns)) # selected eigenvec
     return matrix_w.T.dot(matrix.T)
     #print selected_eigen_pairs(eigen_pairs)[0][1].reshape(64, 4096)
 
@@ -68,38 +69,51 @@ def init_weight(D,K):
     w = np.zeros((D*K,))
     return w
 
-def svm(trainFeatures, trainLabels, testFeatures, testLabels):
-    param_grid = {'C': [1e3, 5e3, 1e4, 5e4, 1e5],
-                  'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1],}
-    clf = GridSearchCV(SVC(kernel='rbf'), param_grid).fit(trainFeatures, trainLabels)
-    predict = clf.predict(testFeatures)
-    print predict
-    print testLabels
-    correct_index = np.where(predict == testLabels)[0]
-    print correct_index
 
-    print 'svm accuracy = ' + str(float(correct_index.size) / float(predict.size))
-
-def knn(trainingFeatures, testFeatures, testLabels, trainingLabels ,K = 300):
+def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
     predict = []
     for i in range(testFeatures.shape[0]):
-        dist = sys.maxint
-        prediction = -1
-        for j in range(trainingFeatures.shape[0]):
-            res = np.linalg.norm(trainingFeatures[j, :]- testFeatures[i, :].T)
-            if res < dist:
-                dist = res
-                prediction = trainingLabels[j]
+        prediction = []
+        j = 0
+        while j < trainingFeatures.shape[0]:
+            distance = np.linalg.norm(trainingFeatures[j, :]- testFeatures[i, :].T)
+            heappush(prediction, (distance, trainingLabels[j]))
+            j+=1
         predict.append(prediction)
 
+    majority = []
     true_num = 0
-    print predict
-    print testLabels
     for i in range(len(predict)):
-        if predict[i] == testLabels[i]:
-            true_num += 1
+        dist = {}
+        major_key = -1
+        major = 0
+        for j in range(K):
+            key = heappop(predict[i])[1]
+            if key in dist:
+                dist[key]+=1
+            else:
+                dist.update({key: 1})
+            if major < dist[key]:
+                major_key = key
+                major = dist[key]
+        majority.append(major_key)
+
+    for i in range(len(majority)):
+        if majority[i] == testLabel[i]:
+            true_num +=1
 
     print float(true_num) / float(testLabels.shape[0])
+
+
+def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels):
+    p = PCA(n_components=200, whiten=True)
+    X_train = p.fit(trainingFeature).transform(trainingFeature)
+    X_test = p.transform(testingFeature)
+    neighbor = KNeighborsClassifier(n_neighbors= 9).fit(X_train, trainingLabels)
+    y_predict = neighbor.predict(X_test)
+    print classification_report(testingLabels, y_predict)
+
+
 
 
 
@@ -122,7 +136,7 @@ if __name__ == "__main__":
     #print("Number of classes: %d" % class_size)
 
     trainingFeature, testFeature, trainingLabel, testLabel = train_test_split(
-    feature, label, test_size=0.25, random_state=None)
+    feature, label, test_size=0.5, random_state=42)
 
     num_of_train = trainingFeature.shape[0]
     print("Extracting the top %d eigenfaces from %d faces"
@@ -130,8 +144,6 @@ if __name__ == "__main__":
 
 
     print "Test lable"
-    print testLabel.shape
-    print trainingLabel.shape
 
 #reducedMatrix = PCA(trainingFeature)
 #reducedMatrix = trainingFeature
@@ -145,9 +157,14 @@ if __name__ == "__main__":
     iterations = 1000
     naught = 10.0
 
+
+    #off-the-shelf implementation
+    off_the_shelf(trainingFeature, testFeature, testLabel, trainingLabel)
+
     #initial weight
     w = init_weight(D,K)
     w = np.random.normal(size=w.size)
+
 
 
     #for i in range(1,iterations):
@@ -162,9 +179,7 @@ if __name__ == "__main__":
 
     #preds = softmax_predict(w,testFeature,K)
     #accuracy = test_softmax(preds,testLabel)
-
-    trainingFeature = PCA(trainingFeature, 4096, 3072)
-    testFeature = PCA(testFeature, 4096, 3072)
-    #svm(trainingFeature.T, trainingLabel, testFeature.T, testLabel)
-    knn(trainingFeature.T, testFeature.T, testLabel, trainingLabel)
-
+    avgMatrix = np.mean(trainingFeature, 0)
+    #trainingFeature = pca(trainingFeature, 4096, avgMatrix,1024)
+    #testFeature = pca(testFeature, 4096, avgMatrix,1024)
+    #knn(trainingFeature.T, testFeature.T, testLabel, trainingLabel)
