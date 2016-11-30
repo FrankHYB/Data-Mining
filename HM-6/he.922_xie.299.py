@@ -3,7 +3,6 @@ import sys
 from heapq import heappush, heappop
 from sklearn.datasets import fetch_olivetti_faces
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
@@ -14,10 +13,9 @@ import matplotlib.pyplot as plt
 @author Yubin He & Yani Xie
 """
 
-
+# PCA
 def pca(matrix, avgImg,num = 40):
     """
-
     :param matrix: raw image matrix (rows * 4096)
     :param avgImg: mean image matrix (1 * 4096)
     :param num: number of eigenvectors
@@ -33,6 +31,7 @@ def pca(matrix, avgImg,num = 40):
         columns.append(eigen_pairs[i][1].reshape(4096,1))
 
     return np.hstack(tuple(columns)) # selected eigenvec
+
 
 
 def preprocess_knn(eigenfaces, trainingFeatures, testingFeatures, avgImg):
@@ -101,6 +100,7 @@ def test_softmax(predictions,testLabel):
 #Initialze weights for softmax
 def init_weight(D,K):
     w = np.zeros((D*K,))
+    w = np.random.normal(size=w.size)
     return w
 
 
@@ -137,24 +137,29 @@ def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
         if majority[i] == testLabel[i]:
             true_num +=1
 
-    print float(true_num) / float(testLabels.shape[0])
+    print 'Accuracy = ' + str(float(true_num) / float(testLabels.shape[0]))
     print classification_report(testLabels, np.asarray(majority))
 
 
-# PCA+KNN, PCA+SVM from sklearn
+# PCA+KNN from sklearn
 def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels):
+    #pca
     p = PCA(n_components=100, whiten=True)
     X_train = p.fit_transform(trainingFeature)
     X_test = p.transform(testingFeature)
+
+    #plot eigenfaces
     plot(p.components_, 64, 64) # plot first 40
-    neighbor = KNeighborsClassifier(n_neighbors= 1).fit(X_train, trainingLabels)
+
+    #knn
+    neighbor = KNeighborsClassifier(n_neighbors= 1,algorithm='auto').fit(X_train, trainingLabels)
     y_predict = neighbor.predict(X_test)
     print 'Result of PCA + KNN:'
     print 'Accuracy = ' + str(accuracy_score(testingLabels, y_predict))
     print classification_report(testingLabels, y_predict)
 
-
-    clf = SVC(kernel='rbf', class_weight='balanced', max_iter= 8)
+    #svm
+    clf = SVC(kernel='rbf',class_weight='balanced')
     clf = clf.fit(X_train, trainingLabels)
     pred = clf.predict(X_test)
     print 'Result of PCA + SVM:'
@@ -162,7 +167,7 @@ def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels
     print classification_report(testingLabels, pred)
 
 
-
+#Plot eigenfaces
 def plot(image_matrix, h, w, row = 5 ,col = 8):
     plt.figure(figsize=(0.9 * col, 1.2 * row))
     for i in range(row * col):
@@ -174,6 +179,7 @@ def plot(image_matrix, h, w, row = 5 ,col = 8):
 
 
 
+
 if __name__ == "__main__":
 
     if len(sys.argv) == 2:
@@ -181,8 +187,8 @@ if __name__ == "__main__":
     else:
         opt = 'off-the-shelf'
 
+    #fetch data
     faces = fetch_olivetti_faces()
-    samples, h, w = faces.images.shape
     feature = faces.data
     feature_size = feature.shape[1]
 
@@ -195,10 +201,13 @@ if __name__ == "__main__":
     feature, label, test_size=0.25, random_state=42)
 
     num_of_train = trainingFeature.shape[0]
-    print("Extracting the top %d faces from %d faces"
+    print("Extracting %d faces from %d faces as training data"
       % (num_of_train, 400))
+    num_of_test = testFeature.shape[0]
+    print("Extracting %d faces from %d faces as test data"
+          % (num_of_test, 400))
 
-
+    #prepare for softmax
     K,D = trainingFeature.shape
     iterations = 1000
     c = 10.0
@@ -209,8 +218,8 @@ if __name__ == "__main__":
     elif opt == 'softmax':
         #initial weight
         w = init_weight(D,K)
-        w = np.random.normal(size=w.size)
 
+        #training
         for i in range(1, iterations):
             # Randomly choose 10 samples
             index = np.random.choice(K, size=(10), replace=False)
@@ -228,9 +237,15 @@ if __name__ == "__main__":
 
     elif opt == 'pca+knn':
         avgImg = np.mean(feature, 0)
+
+        #PCA
         eigenFaces = pca(feature, avgImg, 40)
         eigenTraining, eigenTesting = preprocess_knn(eigenFaces.T, trainingFeature, testFeature, avgImg)
+
+        #knn
         knn(eigenTraining, eigenTesting, testLabel, trainingLabel)
+
+        #plot eigenfaces
         plot(eigenFaces.T, 64, 64)
 
 
