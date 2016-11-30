@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 @author Yubin He & Yani Xie
 """
 
+
 def pca(matrix, avgImg,num = 40):
     """
 
