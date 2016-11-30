@@ -34,6 +34,7 @@ def pca(matrix, avgImg,num = 40):
 
     return np.hstack(tuple(columns)) # selected eigenvec
 
+
 def preprocess_knn(eigenfaces, trainingFeatures, testingFeatures, avgImg):
     """
     :param eigenfaces: 40 * 4096
@@ -52,6 +53,8 @@ def preprocess_knn(eigenfaces, trainingFeatures, testingFeatures, avgImg):
             eigen_testing[i, j] = eigenfaces[j, :].dot(testingFeatures[i, :].T - avgImg.T) #1*1 weight
     return eigen_training, eigen_testing
 
+
+#Softmax algorithms
 def compute_softmax(trainFeature, trainLable, w, K):
     L = 1e-6
     N,D = trainFeature.shape
@@ -95,11 +98,13 @@ def test_softmax(predictions,testLabel):
 
 
 
+#Initialze weights for softmax
 def init_weight(D,K):
     w = np.zeros((D*K,))
     return w
 
 
+#KNN algorithms
 def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
     predict = []
     for i in range(testFeatures.shape[0]):
@@ -143,19 +148,20 @@ def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels
     X_test = p.transform(testingFeature)
     neighbor = KNeighborsClassifier(n_neighbors= 1,algorithm='auto').fit(X_train, trainingLabels)
     y_predict = neighbor.predict(X_test)
-    print accuracy_score(testingLabels, y_predict)
+    print 'Result of PCA + KNN:'
+    print 'Accuracy = ' + str(accuracy_score(testingLabels, y_predict))
     print classification_report(testingLabels, y_predict)
 
-    param_grid = {'C': [1e3, 5e3, 1e4, 5e4, 1e5],
-                  'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1],}
-    clf = GridSearchCV(SVC(kernel='rbf', class_weight='balanced'), param_grid)
-    clf = clf.fit(X_train, trainingLabel)
+
+    clf = SVC(kernel='rbf', class_weight='balanced')
+    clf = clf.fit(X_train, trainingLabels)
     pred = clf.predict(X_test)
+    print 'Result of PCA + SVM:'
+    print 'Accuracy = ' + str(accuracy_score(testingLabels, pred))
+    print classification_report(testingLabels, pred)
 
-    print accuracy_score(testingLabels, y_predict)
-    print classification_report(testingLabels, y_predict)
 
-
+#Plot eigenfaces
 def plot(image_matrix, h, w, k = 8):
     plt.figure(figsize=(0.9 * 8, 1.2 * k))
     for i in range(5 * k):
@@ -164,6 +170,8 @@ def plot(image_matrix, h, w, k = 8):
         plt.xticks(())
         plt.yticks(())
     plt.show()
+
+
 
 if __name__ == "__main__":
 
@@ -188,6 +196,9 @@ if __name__ == "__main__":
     num_of_train = trainingFeature.shape[0]
     print("Extracting the top %d faces from %d faces"
       % (num_of_train, 400))
+    num_of_test = testFeature.shape[0]
+    print("Extracting the top %d faces from %d faces"
+          % (num_of_test, 400))
 
 
     K,D = trainingFeature.shape
@@ -212,9 +223,11 @@ if __name__ == "__main__":
             # update weight
             w -= c / np.sqrt(len(index) * i) * grad
 
+        #prediction and accuracy
         preds = softmax_predict(w, testFeature, K)
         accuracy = test_softmax(preds, testLabel)
         print classification_report(testLabel, preds)
+
     elif opt == 'pca+knn':
         avgImg = np.mean(feature, 0)
         eigenFaces = pca(feature, avgImg, 40)
