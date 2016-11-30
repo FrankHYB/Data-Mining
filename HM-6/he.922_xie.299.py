@@ -55,6 +55,10 @@ def compute_softmax(trainFeature, trainLable, w, K):
     expXW = np.exp(xw)
     sumExpXW = expXW.sum(axis=1)
     XWy = xw[range(N),trainLable]
+    
+    #cost function
+    l = -1.0/N*XWy.sum() + 1.0/N*np.log(sumExpXW).sum() +.5*L*(w**2).sum()#(axis=(0,1))
+    #print l
 
     #compute gradients
     gradient = np.zeros((K, D))
@@ -67,7 +71,7 @@ def compute_softmax(trainFeature, trainLable, w, K):
     return grad
 
 
-
+#Predict labels based on testFeatures
 def softmax_predict(w, feature, K):
     N,D = feature.shape
     w = w.reshape((K,D))
@@ -75,6 +79,7 @@ def softmax_predict(w, feature, K):
     return prediction
 
 
+#Test softmax accuracy
 def test_softmax(predictions,testLabel):
     correct_index = np.where(predictions == testLabel)[0]
     accuracy = float(correct_index.size) / float(predictions.size)
@@ -84,6 +89,7 @@ def test_softmax(predictions,testLabel):
 
 def init_weight(D,K):
     w = np.zeros((D*K,))
+    w = np.random.normal(size=w.size)
     return w
 
 
@@ -158,7 +164,7 @@ if __name__ == "__main__":
 
     label = faces.target
     label_name = np.unique(label)
-    class_size = label_name.shape
+    class_size = label_name.shape[0]
 
     trainingFeature, testFeature, trainingLabel, testLabel = train_test_split(
     feature, label, test_size=0.25, random_state=42)
@@ -170,7 +176,7 @@ if __name__ == "__main__":
 
     K,D = trainingFeature.shape
     iterations = 1000
-    naught = 10.0
+    c = 10.0
 
 
     #off-the-shelf implementation
@@ -178,8 +184,21 @@ if __name__ == "__main__":
 
     #initial weight
     w = init_weight(D,K)
-    w = np.random.normal(size=w.size)
+    
+    for i in range(1,iterations):
+        #Randomly choose 10 samples
+        index = np.random.choice(K,size =(10),replace=False)
+        x = trainingFeature[index,:]
+        y = trainingLabel[index]
+        gradient= compute_softmax(x,y,w,K)
 
+        #update weight
+        w -= c/np.sqrt(len(index)*i)*gradient
+
+    preds = softmax_predict(w,testFeature,K)
+    accuracy = test_softmax(preds,testLabel)
+    print(classification_report(testLabel, preds))
+    
 
     avgImg = np.mean(feature, 0)
     eigenFaces = pca(feature, avgImg, 10)
