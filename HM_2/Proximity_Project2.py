@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from sklearn.neighbors import KNeighborsClassifier
 #Set k = 5.
-K = 8
+K = 3
 
 #Define filenames for Iris output
 IrisFile = 'Iris.csv'
@@ -26,6 +26,13 @@ Income_Unweighted_Prediction = 'Income_Unweighted_Prediction'
 
 Iris_Weighted_Prediction = 'Iris_Weighted_Prediction.csv'
 Income_Weighted_Prediction = 'Income_Weighted_Prediction.csv'
+
+
+plt.title('Income roc curve')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.0])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
 
 class IncomeNode:
 
@@ -515,6 +522,7 @@ def sk_implementation(train_nodes, test_nodes, income_data = False):
     neigh = KNeighborsClassifier(n_neighbors= K, algorithm = 'auto', p = 2)
     neigh.fit(data_X, cla_Y)
     correct = 0
+    # predict every record
     for i in range(len(test_X)):
         label = neigh.predict(test_X[i])[0]
         if label == cla_test[i]:
@@ -524,6 +532,22 @@ def sk_implementation(train_nodes, test_nodes, income_data = False):
     else:
         print 'Off-shelf-Implementation Accuracy for Iris Data:' + str(correct * 1.0/len(test_X))
 
+def generate_roc(testIncome, color, label):
+
+    # 1: <=50K, 0: >50K get roc plot
+    label = []
+    score = []
+    for node in testIncome:
+        if node.clas == ' <=50K':
+            label.append(0)
+            score.append(node.posterior)
+        else:
+            label.append(1)
+            score.append(node.posterior)
+
+    tpr, fpr, threshold = roc_curve(label, score, pos_label = 1)
+
+    return plt.plot(fpr, tpr, label = label, color = color)
 
 if __name__ == '__main__':
 
@@ -538,6 +562,10 @@ if __name__ == '__main__':
     #Initialize
     irises = []
     irisesTest = []
+
+    x = np.arange(0,1.1,0.1)
+    y =x
+    plt.plot(x, y, color='blue')
 
     for i in range(len(IrisData['sepal_length'])):
         irises.append(IrisNode(IrisData, i))
@@ -597,13 +625,16 @@ if __name__ == '__main__':
 
     write_to_file(Income_Prediction, Header, testIncome)
 
+    l1, = generate_roc(testIncome,'black' ,'unweighted euclidean')
+
     #Cos unweighted KNN
-    for i in range(len(testIncome)):
+    for i in r ange(len(testIncome)):
         neighbor = findNeighbors(testIncome[i],income, True)
         pred,prob = posterior_knn(neighbor,False,True)
         testIncome[i].set_prediction(pred, prob)
 
     write_to_file(Income_Unweighted_Prediction,Header,testIncome)
+    l2, = generate_roc(testIncome, 'red','unweighted cos')
 
     #Cos Weighted KNN
     for i in range(len(testIncome)):
@@ -611,29 +642,13 @@ if __name__ == '__main__':
         pred, prob = posterior_knn(neighbor, True,True)
         testIncome[i].set_prediction(pred,prob)
 
-    write_to_file(Income_Weighted_Prediction, Header, testIncome)
+    l3, =  generate_roc(testIncome,'orange' , 'weighted cos')
 
+
+    write_to_file(Income_Weighted_Prediction, Header, testIncome)
+    plt.legend([l1,l2,l3], ['unweighted euclidean', 'unweighted cos', 'weighted cos'], loc = 4)
+    plt.show()
     sk_implementation(income, testIncome, True)
 
 
-    # 1: <=50K, 0: >50K get roc plot
-    label = []
-    score = []
-    for node in testIncome:
-        if node.clas == ' <=50K':
-            label.append(0)
-            score.append(node.posterior)
-        else:
-            label.append(1)
-            score.append(node.posterior)
-
-    tpr, fpr, threshold = roc_curve(label, score, pos_label = 1)
-    roc_auc = auc(fpr, tpr)
-    plt.title('Income roc curve')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.0])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.plot(fpr, tpr, label = 'ROC curve (area = 0.2f)' %roc_auc)
-    plt.show()
 

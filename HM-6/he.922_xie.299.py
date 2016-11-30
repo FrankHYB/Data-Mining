@@ -7,25 +7,42 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report
-import operator
+import matplotlib.pyplot as plt
 
 
-def pca(matrix, K, avgMatrix ,num = 64):
+def pca(matrix, avgImg,num = 40):
     #matrix = np.delete(matrix, np.arange(2048, 4096), 1)#currently 2048 for performance
     #cov_mat = np.cov([row for row in matrix.T])
     for i in range(matrix.shape[0]):
-        matrix[i, :] = matrix[i, :] - avgMatrix
+        matrix[i, :] = matrix[i, :] - avgImg
     eigen_val,eigen_vec = np.linalg.eig(matrix.T.dot(matrix))
     eigen_pairs = [(eigen_val[i], eigen_vec[:, i], i) for i in range(len(eigen_val))]
     eigen_pairs.sort(key=lambda x:x[0], reverse=True)
-    print eigen_vec.shape
     columns = []
     for i in range(num):
-        columns.append(eigen_pairs[i][1].reshape(K, 1))
-    matrix_w = np.hstack(tuple(columns)) # selected eigenvec
-    return matrix_w.T.dot(matrix.T)
+        columns.append(eigen_pairs[i][1].reshape(4096,1))
+
+    return np.hstack(tuple(columns)) # selected eigenvec
     #print selected_eigen_pairs(eigen_pairs)[0][1].reshape(64, 4096)
 
+def preprocess_knn(eigenfaces, trainingFeatures, testingFeatures, avgImg):
+    """
+    :param eigenfaces: 40 * 4096
+    :param trainingFeatures: x * 4096
+    :param testingFeatures:  y * 4096
+    :param avgImg: 1 * 4096
+    :return: eigen_training (400 * 40)
+    """
+    eigen_training = np.zeros((trainingFeatures.shape[0], 40))
+    print eigen_training.shape
+    for i in range(trainingFeatures.shape[0]):
+        for j in range(eigenfaces.shape[0]):
+            eigen_training[i, j] = eigenfaces[j, :].dot(trainingFeatures[i, :].T - avgImg.T) #1*1 weight
+    eigen_testing = np.zeros((testingFeatures.shape[0], 40))
+    for i in range(testingFeatures.shape[0]):
+        for j in range(eigenfaces.shape[0]):
+            eigen_testing[i, j] = eigenfaces[j, :].dot(testingFeatures[i, :].T - avgImg.T) #1*1 weight
+    return eigen_training, eigen_testing
 
 def compute_softmax(trainFeature, trainLable, w, K):
     L = 1e-6
@@ -71,6 +88,9 @@ def init_weight(D,K):
 
 
 def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
+
+
+
     predict = []
     for i in range(testFeatures.shape[0]):
         prediction = []
@@ -98,29 +118,38 @@ def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
                 major = dist[key]
         majority.append(major_key)
 
+    print majority
+    print testLabel
     for i in range(len(majority)):
         if majority[i] == testLabel[i]:
             true_num +=1
 
     print float(true_num) / float(testLabels.shape[0])
+    print classification_report(testLabels, np.asarray(majority))
 
 
+# PCA+KNN from sklearn
 def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels):
-    p = PCA(n_components=200, whiten=True)
-    X_train = p.fit(trainingFeature).transform(trainingFeature)
+    p = PCA(n_components=100, whiten=True)
+    X_train = p.fit_transform(trainingFeature)
     X_test = p.transform(testingFeature)
     neighbor = KNeighborsClassifier(n_neighbors= 9).fit(X_train, trainingLabels)
     y_predict = neighbor.predict(X_test)
     print classification_report(testingLabels, y_predict)
 
 
-
-
-
-
-
+def plot(image_matrix, h, w, k = 8):
+    plt.figure(figsize=(0.9 * 8, 1.2 * k))
+    for i in range(5 * k):
+        plt.subplot(5, k, i + 1)
+        plt.imshow(image_matrix[i, :].reshape((h, w)), cmap=plt.cm.gray)
+        plt.xticks(())
+        plt.yticks(())
+    plt.show()
 
 if __name__ == "__main__":
+
+
 
     faces = fetch_olivetti_faces()
     samples, h, w = faces.images.shape
@@ -131,55 +160,34 @@ if __name__ == "__main__":
     label_name = np.unique(label)
     class_size = label_name.shape
 
-    #print("Number of samples: %d" % samples)
-    #print("Number of features: %d" % feature_size)
-    #print("Number of classes: %d" % class_size)
-
     trainingFeature, testFeature, trainingLabel, testLabel = train_test_split(
-    feature, label, test_size=0.5, random_state=42)
+    feature, label, test_size=0.25, random_state=42)
 
     num_of_train = trainingFeature.shape[0]
     print("Extracting the top %d eigenfaces from %d faces"
       % (num_of_train, 400))
 
 
-    print "Test lable"
-
-#reducedMatrix = PCA(trainingFeature)
-#reducedMatrix = trainingFeature
-#testMatrix = testFeature
-#testMatrix = PCA(testFeature)
-#for i in range(10):
- #   softmax_regressor = softmax(reducedMatrix)
-#print Softmax_regressor
     K,D = trainingFeature.shape
-    print 'K= ' + str(K) + ' D = ' + str(D)
     iterations = 1000
     naught = 10.0
 
 
     #off-the-shelf implementation
-    off_the_shelf(trainingFeature, testFeature, testLabel, trainingLabel)
+    #off_the_shelf(trainingFeature, testFeature, testLabel, trainingLabel)
 
     #initial weight
     w = init_weight(D,K)
     w = np.random.normal(size=w.size)
 
 
+    avgImg = np.mean(feature, 0)
+    eigenFaces = pca(feature, avgImg, 10)
+    print 'eigenfaces shape: ' + str(eigenFaces.shape)
+    eigenTraining, eigenTesting = preprocess_knn(eigenFaces.T, trainingFeature, testFeature, avgImg)
+    knn(eigenTraining, eigenTesting, testLabel, trainingLabel)
+    #plot(eigenFaces.T, 64, 64)
 
-    #for i in range(1,iterations):
-        #Randomly choose 10 samples
-        #index = np.random.choice(K,size =(10),replace=False)
-        #x = trainingFeature[index,:]
-        #y = trainingLabel[index]
-        #grad= compute_softmax(x,y,w,K)
+    #p = PCA(n_components=100, whiten=True)
+    #X_train = p.fit_transform(trainingFeature)
 
-        #update weight
-        #w -= naught/np.sqrt(len(index)*i)*grad
-
-    #preds = softmax_predict(w,testFeature,K)
-    #accuracy = test_softmax(preds,testLabel)
-    avgMatrix = np.mean(trainingFeature, 0)
-    #trainingFeature = pca(trainingFeature, 4096, avgMatrix,1024)
-    #testFeature = pca(testFeature, 4096, avgMatrix,1024)
-    #knn(trainingFeature.T, testFeature.T, testLabel, trainingLabel)
