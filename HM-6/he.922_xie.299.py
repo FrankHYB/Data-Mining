@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from heapq import heappush, heappop
 from sklearn.datasets import fetch_olivetti_faces
 from sklearn.model_selection import train_test_split
@@ -7,12 +8,20 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-
+"""
+@author Yubin He & Yani Xie
+"""
 
 def pca(matrix, avgImg,num = 40):
-    #matrix = np.delete(matrix, np.arange(2048, 4096), 1)#currently 2048 for performance
-    #cov_mat = np.cov([row for row in matrix.T])
+    """
+
+    :param matrix: raw image matrix (rows * 4096)
+    :param avgImg: mean image matrix (1 * 4096)
+    :param num: number of eigenvectors
+    :return: eigenvector matrix (4096*40), each column is a eigenvector
+    """
     for i in range(matrix.shape[0]):
         matrix[i, :] = matrix[i, :] - avgImg
     eigen_val,eigen_vec = np.linalg.eig(matrix.T.dot(matrix))
@@ -23,7 +32,6 @@ def pca(matrix, avgImg,num = 40):
         columns.append(eigen_pairs[i][1].reshape(4096,1))
 
     return np.hstack(tuple(columns)) # selected eigenvec
-    #print selected_eigen_pairs(eigen_pairs)[0][1].reshape(64, 4096)
 
 def preprocess_knn(eigenfaces, trainingFeatures, testingFeatures, avgImg):
     """
@@ -34,7 +42,6 @@ def preprocess_knn(eigenfaces, trainingFeatures, testingFeatures, avgImg):
     :return: eigen_training (400 * 40)
     """
     eigen_training = np.zeros((trainingFeatures.shape[0], 40))
-    print eigen_training.shape
     for i in range(trainingFeatures.shape[0]):
         for j in range(eigenfaces.shape[0]):
             eigen_training[i, j] = eigenfaces[j, :].dot(trainingFeatures[i, :].T - avgImg.T) #1*1 weight
@@ -88,9 +95,6 @@ def init_weight(D,K):
 
 
 def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
-
-
-
     predict = []
     for i in range(testFeatures.shape[0]):
         prediction = []
@@ -118,8 +122,6 @@ def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
                 major = dist[key]
         majority.append(major_key)
 
-    print majority
-    print testLabel
     for i in range(len(majority)):
         if majority[i] == testLabel[i]:
             true_num +=1
@@ -133,8 +135,18 @@ def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels
     p = PCA(n_components=100, whiten=True)
     X_train = p.fit_transform(trainingFeature)
     X_test = p.transform(testingFeature)
-    neighbor = KNeighborsClassifier(n_neighbors= 9).fit(X_train, trainingLabels)
+    neighbor = KNeighborsClassifier(n_neighbors= 1).fit(X_train, trainingLabels)
     y_predict = neighbor.predict(X_test)
+    print accuracy_score(testingLabels, y_predict)
+    print classification_report(testingLabels, y_predict)
+
+    param_grid = {'C': [1e3, 5e3, 1e4, 5e4, 1e5],
+                  'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1],}
+    clf = GridSearchCV(SVC(kernel='rbf', class_weight='balanced'), param_grid)
+    clf = clf.fit(X_train, trainingLabel)
+    pred = clf.predict(X_test)
+
+    print accuracy_score(testingLabels, y_predict)
     print classification_report(testingLabels, y_predict)
 
 
@@ -149,7 +161,10 @@ def plot(image_matrix, h, w, k = 8):
 
 if __name__ == "__main__":
 
-
+    if len(sys.argv) == 2:
+        opt = sys.argv[1]
+    else:
+        opt = 'off-the-shelf'
 
     faces = fetch_olivetti_faces()
     samples, h, w = faces.images.shape
@@ -160,34 +175,46 @@ if __name__ == "__main__":
     label_name = np.unique(label)
     class_size = label_name.shape
 
+    # separate the training data and test data
     trainingFeature, testFeature, trainingLabel, testLabel = train_test_split(
     feature, label, test_size=0.25, random_state=42)
 
     num_of_train = trainingFeature.shape[0]
-    print("Extracting the top %d eigenfaces from %d faces"
+    print("Extracting the top %d faces from %d faces"
       % (num_of_train, 400))
 
 
     K,D = trainingFeature.shape
     iterations = 1000
-    naught = 10.0
+    c = 10.0
+
+    if opt == 'off-the-shelf':
+        #off-the-shelf implementation
+        off_the_shelf(trainingFeature, testFeature, testLabel, trainingLabel)
+    elif opt == 'softmax':
+        #initial weight
+        w = init_weight(D,K)
+        w = np.random.normal(size=w.size)
+
+        for i in range(1, iterations):
+            # Randomly choose 10 samples
+            index = np.random.choice(K, size=(10), replace=False)
+            x = trainingFeature[index, :]
+            y = trainingLabel[index]
+            grad = compute_softmax(x, y, w, K)
+
+            # update weight
+            w -= c / np.sqrt(len(index) * i) * grad
+
+        preds = softmax_predict(w, testFeature, K)
+        accuracy = test_softmax(preds, testLabel)
+        print classification_report(testLabel, preds)
+    elif opt == 'pca+knn':
+        avgImg = np.mean(feature, 0)
+        eigenFaces = pca(feature, avgImg, 40)
+        eigenTraining, eigenTesting = preprocess_knn(eigenFaces.T, trainingFeature, testFeature, avgImg)
+        knn(eigenTraining, eigenTesting, testLabel, trainingLabel)
+        plot(eigenFaces.T, 64, 64)
 
 
-    #off-the-shelf implementation
-    #off_the_shelf(trainingFeature, testFeature, testLabel, trainingLabel)
-
-    #initial weight
-    w = init_weight(D,K)
-    w = np.random.normal(size=w.size)
-
-
-    avgImg = np.mean(feature, 0)
-    eigenFaces = pca(feature, avgImg, 10)
-    print 'eigenfaces shape: ' + str(eigenFaces.shape)
-    eigenTraining, eigenTesting = preprocess_knn(eigenFaces.T, trainingFeature, testFeature, avgImg)
-    knn(eigenTraining, eigenTesting, testLabel, trainingLabel)
-    #plot(eigenFaces.T, 64, 64)
-
-    #p = PCA(n_components=100, whiten=True)
-    #X_train = p.fit_transform(trainingFeature)
 

@@ -1,0 +1,21 @@
+Assignment 6 is written in python 2, some packages need to be installed before
+successfully run the program
+# First sklearn package
+Scikit-learn requires:
+Python (>= 2.6 or >= 3.3),
+NumPy (>= 1.6.1),
+SciPy (>= 0.9).
+
+Then you can install sklearn 0.18.1, any version that is below 0.18 will cause compile error.
+You can install sklearn 0.18.1 by running:
+> pip install scikit-learn==0.18.1
+I have encountered permission error, if you also encounter this error then using sudo
+> sudo pip install scikit-learn==0.18.1
+
+After you install all required packages, you can start running the program
+> python "script_name" option
+option is optional. If user don't specify the option, the program will default run the off-the-shelf implementation
+option can be
+    'softmax': choose softmax data mining algorithm
+    'pca+knn': choose pca+knn as data mining algorithm
+
