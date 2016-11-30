@@ -63,6 +63,10 @@ def compute_softmax(trainFeature, trainLable, w, K):
     sumExpXW = expXW.sum(axis=1)
     XWy = xw[range(N),trainLable]
 
+    #cost function
+    l = -1.0/N*XWy.sum() + 1.0/N*np.log(sumExpXW).sum() +.5*L*(w**2).sum()#(axis=(0,1))
+    #print l
+
     #compute gradients
     gradient = np.zeros((K, D))
     for k in range(K):
@@ -74,7 +78,7 @@ def compute_softmax(trainFeature, trainLable, w, K):
     return grad
 
 
-
+#Predict labels based on testFeatures
 def softmax_predict(w, feature, K):
     N,D = feature.shape
     w = w.reshape((K,D))
@@ -82,6 +86,7 @@ def softmax_predict(w, feature, K):
     return prediction
 
 
+#Test softmax accuracy
 def test_softmax(predictions,testLabel):
     correct_index = np.where(predictions == testLabel)[0]
     accuracy = float(correct_index.size) / float(predictions.size)
@@ -173,7 +178,7 @@ if __name__ == "__main__":
 
     label = faces.target
     label_name = np.unique(label)
-    class_size = label_name.shape
+    class_size = label_name.shape[0]
 
     # separate the training data and test data
     trainingFeature, testFeature, trainingLabel, testLabel = train_test_split(
