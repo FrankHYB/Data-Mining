@@ -141,7 +141,7 @@ def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels
     p = PCA(n_components=100, whiten=True)
     X_train = p.fit_transform(trainingFeature)
     X_test = p.transform(testingFeature)
-    neighbor = KNeighborsClassifier(n_neighbors= 1).fit(X_train, trainingLabels)
+    neighbor = KNeighborsClassifier(n_neighbors= 1,algorithm='auto').fit(X_train, trainingLabels)
     y_predict = neighbor.predict(X_test)
     print accuracy_score(testingLabels, y_predict)
     print classification_report(testingLabels, y_predict)
