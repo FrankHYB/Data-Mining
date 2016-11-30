@@ -141,19 +141,20 @@ def knn(trainingFeatures, testFeatures, testLabels, trainingLabels, K = 5):
     print classification_report(testLabels, np.asarray(majority))
 
 
-# PCA+KNN from sklearn
+# PCA+KNN, PCA+SVM from sklearn
 def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels):
     p = PCA(n_components=100, whiten=True)
     X_train = p.fit_transform(trainingFeature)
     X_test = p.transform(testingFeature)
-    neighbor = KNeighborsClassifier(n_neighbors= 1,algorithm='auto').fit(X_train, trainingLabels)
+    plot(p.components_, 64, 64) # plot first 40
+    neighbor = KNeighborsClassifier(n_neighbors= 1).fit(X_train, trainingLabels)
     y_predict = neighbor.predict(X_test)
     print 'Result of PCA + KNN:'
     print 'Accuracy = ' + str(accuracy_score(testingLabels, y_predict))
     print classification_report(testingLabels, y_predict)
 
 
-    clf = SVC(kernel='rbf', class_weight='balanced')
+    clf = SVC(kernel='rbf', class_weight='balanced', max_iter= 8)
     clf = clf.fit(X_train, trainingLabels)
     pred = clf.predict(X_test)
     print 'Result of PCA + SVM:'
@@ -161,11 +162,11 @@ def off_the_shelf(trainingFeature, testingFeature, testingLabels, trainingLabels
     print classification_report(testingLabels, pred)
 
 
-#Plot eigenfaces
-def plot(image_matrix, h, w, k = 8):
-    plt.figure(figsize=(0.9 * 8, 1.2 * k))
-    for i in range(5 * k):
-        plt.subplot(5, k, i + 1)
+
+def plot(image_matrix, h, w, row = 5 ,col = 8):
+    plt.figure(figsize=(0.9 * col, 1.2 * row))
+    for i in range(row * col):
+        plt.subplot(row, col, i + 1)
         plt.imshow(image_matrix[i, :].reshape((h, w)), cmap=plt.cm.gray)
         plt.xticks(())
         plt.yticks(())
@@ -196,9 +197,6 @@ if __name__ == "__main__":
     num_of_train = trainingFeature.shape[0]
     print("Extracting the top %d faces from %d faces"
       % (num_of_train, 400))
-    num_of_test = testFeature.shape[0]
-    print("Extracting the top %d faces from %d faces"
-          % (num_of_test, 400))
 
 
     K,D = trainingFeature.shape

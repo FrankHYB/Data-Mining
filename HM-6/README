@@ -19,3 +19,5 @@ option can be
     'softmax': choose softmax data mining algorithm
     'pca+knn': choose pca+knn as data mining algorithm
 
+Our custom implementation (softmax and pca+knn) will be time consuming, it will run from 2 to 4 minutes which is also
+dependent on the computer.
